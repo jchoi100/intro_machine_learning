@@ -1,0 +1,18 @@
+
+speech.mc | knn | Accuracy: 0.576271 (68/118) | 7.15629291534 (s)
+easy | knn | Accuracy: 0.990000 (99/100) | 0.897701978683 (s)
+hard | knn | Accuracy: 0.440000 (44/100) | 4.64626693726 (s)
+bio | knn | Accuracy: 0.870000 (174/200) | 37.7581548691 (s)                              183
+speech | knn | Accuracy: 0.850000 (85/100) | 12.535877943 (s)
+finance | knn | Accuracy: 0.733333 (22/30) | 0.846517086029 (s)
+vision | knn | Accuracy: 1.000000 (80/80) | 1.32053685188 (s)
+
+
+
+speech.mc | distance_knn | Accuracy: 0.627119 (74/118) | 12.9885849953 (s)                 75
+easy | distance_knn | Accuracy: 0.990000 (99/100) | 1.00576114655 (s)
+hard | distance_knn | Accuracy: 0.440000 (44/100) | 8.47941207886 (s)
+bio | distance_knn | Accuracy: 0.915000 (183/200) | 65.7892680168 (s)                174
+speech | distance_knn | Accuracy: 0.850000 (85/100) | 17.7141292095 (s)
+finance | distance_knn | Accuracy: 0.700000 (21/30) | 0.614553928375 (s)              22   22
+vision | distance_knn | Accuracy: 1.000000 (80/80) | 0.686416864395 (s)
