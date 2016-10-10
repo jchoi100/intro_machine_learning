@@ -1,0 +1,9 @@
+AdaBoost accuracy
+
+Vision: 0.4625 (37/80)
+Finance: 0.6 (18/30) 
+Speech: (/)
+Bio: (/)
+Hard: (/)
+Easy: 0.5 (50/100)
+Speech.mc: (/)
