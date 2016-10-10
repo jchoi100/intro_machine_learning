@@ -191,7 +191,7 @@ class KNN(Predictor):
         for known_instance in self.instances:
             dist = self.compute_distance(known_instance, instance)
             nearest_neighbors.append((known_instance._label.label, dist))
-        nearest_neighbors = sorted(nearest_neighbors, key=lambda tup: (tup[1]))[0:self.knn]
+        nearest_neighbors = sorted(nearest_neighbors, key=lambda tup: (tup[1],tup[0]))[0:self.knn]
         votes = {}
         for (label, distance) in nearest_neighbors:
             if self.is_weighted:
@@ -227,6 +227,8 @@ class AdaBoost(Predictor):
         self.a_list = []
         self.hypothesis_list = []
         self.instances = []
+        self.h_cache = {}
+        self.z_cache = {}
 
     def train(self, instances):
         self.initialize(instances)
@@ -241,7 +243,9 @@ class AdaBoost(Predictor):
             for i in range(len(instances)):
                 x_i = instances[i]._feature_vector.feature_vector
                 y_i = 1 if instances[i]._label.label == 1 else -1
-                self.D[i] *= ((1.0 / self.compute_z(a_t, instances, j, c)) * exp(-a_t * y_i * self.compute_h(j, c, instances[i], instances)))
+                h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) else self.compute_h(j, c, instances[i], instances)
+                z_val = self.z_cache[(a_t, j, c)] if self.z_cache.has_key((a_t, j, c)) else self.compute_z(a_t, instances, j, c)
+                self.D[i] *= ((1.0 / z_val) * exp(-a_t * y_i * h_val))
 
     def get_h_t(self, instances):
         min_epsilon = float('inf')
@@ -257,7 +261,8 @@ class AdaBoost(Predictor):
         epsilon = 0.0
         for i in range(len(instances)):
             y_i = 1 if instances[i]._label.label == 1 else -1
-            epsilon += self.D[i] * (1 if self.compute_h(j, c, instances[i], instances) != y_i else 0)
+            h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) else self.compute_h(j, c, instances[i], instances)
+            epsilon += self.D[i] * (1 if h_val != y_i else 0)
         return epsilon
 
     def compute_h(self, j, c, instance, instances):
@@ -283,6 +288,7 @@ class AdaBoost(Predictor):
                 if x_i_prime.has_key(j) and x_i_prime[j] <= c:
                     candidates[y_i_prime] += 1
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
+        self.h_cache[(j, c, instance)] = candidates[0][0]
         return candidates[0][0]
 
     def compute_z(self, a_t, instances, j, c):
@@ -290,7 +296,8 @@ class AdaBoost(Predictor):
         for i in range(len(instances)):
             x_i = instances[i]._feature_vector.feature_vector
             y_i = 1 if instances[i]._label.label == 1 else -1
-            z += (self.D[i] * exp(-a_t * y_i * self.compute_h(j, c, instances[i], instances)))
+            h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) else self.compute_h(j, c, instances[i], instances)    
+            z += (self.D[i] * exp(-a_t * y_i * h_val))
         return z
 
     def predict(self, instance):
@@ -298,7 +305,8 @@ class AdaBoost(Predictor):
         for t in range(len(self.h_t_list)):
             a_t = self.a_list[t]
             j_t, c_t = self.h_t_list[t]
-            candidates[self.compute_h(j_t, c_t, instance, self.instances)] += a_t
+            h_val = self.h_cache[(j_t, c_t, instance)] if self.h_cache.has_key((j_t, c_t, instance)) else self.compute_h(j_t, c_t, instance, instances)                
+            candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
 
