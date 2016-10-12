@@ -355,6 +355,7 @@ class AdaBoost(Predictor):
             for feature, value in instance._feature_vector.feature_vector.items():
                 if feature == j and value not in c_list:
                     c_list.append(value)
+        c_list.sort()
         return c_list
 
 
