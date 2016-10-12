@@ -274,7 +274,7 @@ class AdaBoost(Predictor):
 
     def compute_z(self, a, j, c, instances):
         if self.z_value_cache.has_key((j,c,a)):
-            return z_value_cache[(j,c,a)]
+            return self.z_value_cache[(j,c,a)]
         else:
             z = 0.0
             for i in range(len(instances)):
@@ -282,7 +282,7 @@ class AdaBoost(Predictor):
                 x_i = instance._feature_vector.feature_vector
                 y_i = 1 if instance._label.label == 1 else -1
                 z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, instance, instances)))
-            z_value_cache[(j,c,a)] = z
+            self.z_value_cache[(j,c,a)] = z
             return z
 
     def initialize_weights(self, n):
