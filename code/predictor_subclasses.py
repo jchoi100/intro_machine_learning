@@ -336,7 +336,7 @@ class AdaBoost(Predictor):
         if self.h_value_cache.has_key((j,c,instance)):
             return self.h_value_cache[(j,c,instance)]
         else:
-            candidates = self.create_candidates_map(instances)
+            candidates = self.create_candidates_map()
             if x_i.has_key(j) and x_i[j] > c:
                 for instance in instances:
                     if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] > c:
