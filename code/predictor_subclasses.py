@@ -260,16 +260,17 @@ class AdaBoost(Predictor):
         for t in range(self.T):
             j = self.h_t_list[t][0]
             c = self.h_t_list[t][1]
-            candidates[y_i] += (self.a_t_list[t] * (1 if self.compute_h(j, c, x_i, self.instances) == y_i else 0))
+            candidates[y_i] += (self.a_t_list[t] * (1 if self.compute_h(j, c, instance, self.instances) == y_i else 0))
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
 
     def update_weight(self, a, j, c, instances):
         z_t = self.compute_z(a, j, c, instances)
         for i in range(len(instances)):
+            instance = instances[i]
             x_i = instance._feature_vector.feature_vector
             y_i = 1 if instance._label.label == 1 else -1
-            self.D[i] *= ((1.0 / z_t) * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
+            self.D[i] *= ((1.0 / z_t) * exp(-a*y_i*self.compute_h(j, c, instance, instances)))
 
     def compute_z(self, a, j, c, instances):
         if self.z_value_cache.has_key((j,c,a)):
@@ -280,7 +281,7 @@ class AdaBoost(Predictor):
                 instance = instances[i]
                 x_i = instance._feature_vector.feature_vector
                 y_i = 1 if instance._label.label == 1 else -1
-                z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
+                z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, instance, instances)))
             z_value_cache[(j,c,a)] = z
             return z
 
@@ -315,7 +316,7 @@ class AdaBoost(Predictor):
             instance = instances[i]
             x_i = instance._feature_vector.feature_vector
             y_i = 1 if instance._label.label == 1 else -1
-            error += self.D[i] * (1 if self.compute_h(j, c, x_i, instances) == y_i else 0)
+            error += self.D[i] * (1 if self.compute_h(j, c, instance, instances) == y_i else 0)
         return error
 
     def create_all_labels_list(self, instances):
@@ -330,9 +331,10 @@ class AdaBoost(Predictor):
             candidates[label] = 0.0
         return candidates
 
-    def compute_h(self, j, c, x_i, instances):
-        if self.h_value_cache.has_key((j,c,x_i)):
-            return self.h_value_cache[(j,c,x_i)]
+    def compute_h(self, j, c, instance, instances):
+        x_i = instance._feature_vector.feature_vector
+        if self.h_value_cache.has_key((j,c,instance)):
+            return self.h_value_cache[(j,c,instance)]
         else:
             candidates = self.create_candidates_map(instances)
             if x_i.has_key(j) and x_i[j] > c:
@@ -344,7 +346,7 @@ class AdaBoost(Predictor):
                     if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] <= c:
                         candidates[1 if instance._label.label == 1 else -1] += 1
             candidates = sorted(candidates.items(), key=lambda tup:tup[1], reverse=True)
-            self.h_value_cache[(j,c,x_i)] = candidates[0][0]
+            self.h_value_cache[(j,c,instance)] = candidates[0][0]
             return candidates[0][0]
 
     def create_c_list_for_dim_j(self, instances, j):
