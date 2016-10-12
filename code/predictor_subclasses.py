@@ -349,7 +349,8 @@ class AdaBoost(Predictor):
         for instance in instances:
             x_i = instance._feature_vector.feature_vector
             if x_i.has_key(j):
-                all_dim_j_values.append(x_i[j])
+                if x_i[j] not in all_dim_j_values:
+                    all_dim_j_values.append(x_i[j])
         all_dim_j_values.sort()
         return all_dim_j_values
 
