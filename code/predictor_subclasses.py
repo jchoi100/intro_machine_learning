@@ -298,7 +298,7 @@ class AdaBoost(Predictor):
 
     def create_hypothesis_set(self):
         for j in self.all_dim_list:
-            c_list = self.create_c_list_for_dim_j(self.instances, j)
+            c_list = self.create_c_list_for_dim_j(j)
             for i in range(len(c_list) - 1):
                 self.hypothesis_set.append((j, (c_list[i] + c_list[i + 1]) / 2.0))
 
