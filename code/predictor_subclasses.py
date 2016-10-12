@@ -239,7 +239,7 @@ class AdaBoost(Predictor):
         self.create_hypothesis_set(instances)
         self.initialize_weights(len(instances))
         self.create_all_labels_list(instances)
-        for t in range(T):
+        for t in range(self.T):
             j_t, c_t = self.find_h_t(instances)
             e_t = self.compute_error(j_t, c_t, instances)
             if e_t == 0:
