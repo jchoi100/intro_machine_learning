@@ -318,7 +318,7 @@ class AdaBoost(Predictor):
             error += self.D[i] * (1 if self.compute_h(j, c, x_i, instances) == y_i else 0)
         return error
 
-    def create_all_labels_list(self. instances):
+    def create_all_labels_list(self, instances):
         for instance in instances:
             label = 1 if instance._label.label == 1 else -1
             if label not in self.all_labels:
