@@ -307,7 +307,7 @@ class AdaBoost(Predictor):
             x_i = self.instances[i]._feature_vector.feature_vector
             y_i = 1 if self.instances[i]._label.label == 1 else -1
             h_val = self.h_cache[(j, c, self.instances[i])] if self.h_cache.has_key((j, c, self.instances[i])) \
-                                                       else self.compute_h(j, c, self.instances[i], instances)    
+                                                       else self.compute_h(j, c, self.instances[i])    
             z += (self.D[i] * exp(-a_t * y_i * h_val))
         return z
 
@@ -317,7 +317,7 @@ class AdaBoost(Predictor):
             a_t = self.a_list[t]
             j_t, c_t = self.h_t_list[t]
             h_val = self.h_cache[(j_t, c_t, instance)] if self.h_cache.has_key((j_t, c_t, instance)) \
-                                                       else self.compute_h(j_t, c_t, instance, self.instances)                
+                                                       else self.compute_h(j_t, c_t, instance)                
             candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
