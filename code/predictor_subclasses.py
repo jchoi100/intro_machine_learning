@@ -174,48 +174,49 @@ class Pegasos(Predictor):
 class KNN(Predictor):
 
     def __init__(self, knn, is_weighted):
-        self.instances = []
         self.knn = knn
-        self.all_features = []
         self.is_weighted = is_weighted
+        self.instances = []
+        self.all_features = []
 
     def train(self, instances):
         self.instances = instances
-        for instance in self.instances:
-            for feature in instance._feature_vector.feature_vector.keys():
+        for instance in instances:
+            for feature in instance._feature_vector.feature_vector:
                 if feature not in self.all_features:
                     self.all_features.append(feature)
 
     def predict(self, instance):
-        nearest_neighbors = []
+        neighbors = []
         for known_instance in self.instances:
-            dist = self.compute_distance(known_instance, instance)
-            nearest_neighbors.append((known_instance._label.label, dist))
-        nearest_neighbors = sorted(nearest_neighbors, key=lambda tup: (tup[1]))[0:self.knn]
+            x_i = known_instance._feature_vector.feature_vector
+            y_i = known_instance._label.label
+            distance = self.compute_distance(x_i, instance._feature_vector.feature_vector)
+            neighbors.append((y_i, distance))
+        neighbors = sorted(neighbors, key=lambda tup: (tup[1], tup[0]))
+        nearest_neighbors = neighbors[0:self.knn]
         votes = {}
-        for (label, distance) in nearest_neighbors:
+        for neighbor in nearest_neighbors:
             if self.is_weighted:
-                if votes.has_key(label):
-                    votes[label] -= 1.0 / (1+distance**2)
+                if votes.has_key(neighbor[0]):
+                    votes[neighbor[0]] -= 1.0 / (1 + neighbor[1]**2)
                 else:
-                    votes[label] = -1.0 / (1+distance**2)
+                    votes[neighbor[0]] = -1.0 / (1 + neighbor[1]**2)
             else:
-                if votes.has_key(label):
-                    votes[label] -= 1
+                if votes.has_key(neighbor[0]):
+                    votes[neighbor[0]] -= 1
                 else:
-                    votes[label] = -1
-        votes = sorted(votes.items(), key=lambda tup: (tup[1], tup[0])) # Sort by num_votes then label
+                    votes[neighbor[0]] = -1
+        votes = sorted(votes.items(), key=lambda tup: (tup[1], tup[0]))
         return votes[0][0]
 
-    def compute_distance(self, known_instance, sample_instance):
-        dist = 0
+    def compute_distance(self, known_instance_features, test_instance_features):
+        distance = 0
         for feature in self.all_features:
-            known_instance_value = known_instance._feature_vector.feature_vector[feature] \
-                if known_instance._feature_vector.feature_vector.has_key(feature) else 0
-            sample_instance_value = sample_instance._feature_vector.feature_vector[feature] \
-                if sample_instance._feature_vector.feature_vector.has_key(feature) else 0
-            dist += (known_instance_value - sample_instance_value) ** 2
-        return sqrt(dist)
+            known_instance_value = known_instance_features[feature] if known_instance_features.has_key(feature) else 0
+            test_instance_value = test_instance_features[feature] if test_instance_features.has_key(feature) else 0
+            distance += (known_instance_value - test_instance_value)**2
+        return sqrt(distance)
 
 
 class AdaBoost(Predictor):
@@ -237,6 +238,10 @@ class AdaBoost(Predictor):
         for t in range(self.num_boosting_iterations):
             j, c = self.get_h_t(instances)
             epsilon = self.compute_epsilon(j, c, instances)
+            if t == 0 and epsilon == 0:
+                self.h_t_list.append((j, c))
+                self.a_list.append(1)
+                break
             a_t = 0.5 * log((1 - epsilon) / epsilon)
             if a_t < 0.000001:
                 break

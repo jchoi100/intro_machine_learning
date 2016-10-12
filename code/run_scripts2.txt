@@ -31,6 +31,7 @@ python compute_accuracy.py vision.dev vision.dev.predictions
 
 
 
+
 python code/classify.py --mode train --algorithm distance_knn --model-file speech.mc.distance_knn.model --data speech.mc.train --knn 5
 python code/classify.py --mode test --model-file speech.mc.distance_knn.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
 python compute_accuracy.py speech.mc.dev speech.mc.dev.predictions
@@ -62,6 +63,24 @@ python compute_accuracy.py vision.dev vision.dev.predictions
 
 
 
+
+
+
+
+
+python code/classify.py --mode train --algorithm knn --model-file nlp.knn.model --data nlp.train --knn 5
+python code/classify.py --mode test --model-file nlp.knn.model --data nlp.dev --predictions-file nlp.dev.predictions
+python compute_accuracy.py nlp.dev nlp.dev.predictions
+
+python code/classify.py --mode train --algorithm distance_knn --model-file nlp.distance_knn.model --data nlp.train --knn 5
+python code/classify.py --mode test --model-file nlp.distance_knn.model --data nlp.dev --predictions-file nlp.dev.predictions
+python compute_accuracy.py nlp.dev nlp.dev.predictions
+
+
+
+
+
+
 python code/classify.py --mode train --algorithm adaboost --model-file speech.mc.adaboost.model --data speech.mc.train --num-boosting-iterations 10
 python code/classify.py --mode test --model-file speech.mc.adaboost.model --data speech.mc.dev --predictions-file speech.mc..dev.predictions
 python compute_accuracy.py speech.mc.dev speech.mc.dev.predictions
@@ -89,3 +108,9 @@ python compute_accuracy.py vision.dev vision.dev.predictions
 python code/classify.py --mode train --algorithm adaboost --model-file easy.adaboost.model --data easy.train --num-boosting-iterations 10
 python code/classify.py --mode test --model-file easy.adaboost.model --data easy.dev --predictions-file easy.dev.predictions
 python compute_accuracy.py easy.dev easy.dev.predictions
+
+
+
+
+
+
