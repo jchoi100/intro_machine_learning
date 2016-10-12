@@ -222,153 +222,138 @@ class KNN(Predictor):
 class AdaBoost(Predictor):
 
     def __init__(self, num_boosting_iterations):
-        self.num_boosting_iterations = num_boosting_iterations
-        self.D = []
-        self.all_labels = []
-        self.all_features = []
+        self.T = num_boosting_iterations
         self.h_t_list = []
-        self.a_list = []
-        self.hypothesis_list = []
+        self.a_t_list = []
+        self.hypothesis_set = []
+        self.D = []
+        self.all_dim_list = []
+        self.all_labels = []
         self.instances = []
-        self.h_cache = {}
-        self.z_cache = {}
 
     def train(self, instances):
-        self.initialize(instances)
-        for t in range(self.num_boosting_iterations):
-            j, c = self.get_h_t(instances)
-            epsilon = self.compute_epsilon(j, c, instances)
-            if t == 0 and epsilon == 0:
-                self.h_t_list.append((j, c))
-                self.a_list.append(1)
+        self.instances = instances
+        self.create_all_dim_list(instances)
+        self.create_hypothesis_set(instances)
+        self.initialize_weights(len(instances))
+        self.create_all_labels_list(instances)
+        for t in range(T):
+            j_t, c_t = self.find_h_t(instances)
+            e_t = self.compute_error(j_t, c_t, instances)
+            if e_t == 0:
+                self.h_t_list.append((j_t, c_t))
+                self.a_t_list.append(1)
                 break
-            a_t = 0.5 * log((1 - epsilon) / epsilon)
+            a_t = 0.5 * log((1 - e_t) / (e_t))
             if a_t < 0.000001:
                 break
-            self.h_t_list.append((j, c))
-            self.a_list.append(a_t)
-            for i in range(len(instances)):
-                x_i = instances[i]._feature_vector.feature_vector
-                y_i = 1 if instances[i]._label.label == 1 else -1
-                h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) \
-                                                           else self.compute_h(j, c, instances[i], instances)
-                z_val = self.z_cache[(a_t, j, c)] if self.z_cache.has_key((a_t, j, c)) \
-                                                  else self.compute_z(a_t, instances, j, c)
-                self.D[i] *= ((1.0 / z_val) * exp(-a_t * y_i * h_val))
-
-    def get_h_t(self, instances):
-        min_epsilon = float('inf')
-        min_j, min_c = -1, -1
-        for j, c in self.hypothesis_list:
-            curr_epsilon = self.compute_epsilon(j, c, instances)
-            if curr_epsilon < min_epsilon:
-                min_epsilon = curr_epsilon
-                min_j, min_c = j, c
-        return min_j, min_c
-
-    def compute_epsilon(self, j, c, instances):
-        epsilon = 0.0
-        for i in range(len(instances)):
-            y_i = 1 if instances[i]._label.label == 1 else -1
-            h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) \
-                                                       else self.compute_h(j, c, instances[i], instances)
-            epsilon += self.D[i] * (1 if h_val != y_i else 0)
-        return epsilon
-
-    def compute_h(self, j, c, instance, instances):
-        x_i = instance._feature_vector.feature_vector
-        candidates = self.create_candidate_dict()
-        if x_i.has_key(j):
-            if x_i[j] > c:
-                for instance in instances:
-                    x_i_prime = instance._feature_vector.feature_vector
-                    y_i_prime = instance._label.label
-                    if x_i_prime.has_key(j) and x_i_prime[j] > c:
-                        candidates[y_i_prime] += 1
-            else:
-                for instance in instances:
-                    x_i_prime = instance._feature_vector.feature_vector
-                    y_i_prime = instance._label.label
-                    if x_i_prime.has_key(j) and x_i_prime[j] <= c:
-                        candidates[y_i_prime] += 1
-        else:
-            for instance in instances:
-                x_i_prime = instance._feature_vector.feature_vector
-                y_i_prime = instance._label.label
-                if x_i_prime.has_key(j) and x_i_prime[j] <= c:
-                    candidates[y_i_prime] += 1
-        candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-        self.h_cache[(j, c, instance)] = candidates[0][0]
-        return candidates[0][0]
-
-    def compute_z(self, a_t, instances, j, c):
-        z = 0.0
-        for i in range(len(instances)):
-            x_i = instances[i]._feature_vector.feature_vector
-            y_i = 1 if instances[i]._label.label == 1 else -1
-            h_val = self.h_cache[(j, c, instances[i])] if self.h_cache.has_key((j, c, instances[i])) \
-                                                       else self.compute_h(j, c, instances[i], instances)    
-            z += (self.D[i] * exp(-a_t * y_i * h_val))
-        return z
+            self.h_t_list.append((j_t, c_t))
+            self.a_t_list.append(a_t)
+            self.update_weight(a_t, j_t, c_t, instances)
 
     def predict(self, instance):
-        candidates = self.create_candidate_dict()
-        for t in range(len(self.h_t_list)):
-            a_t = self.a_list[t]
-            j_t, c_t = self.h_t_list[t]
-            h_val = self.h_cache[(j_t, c_t, instance)] if self.h_cache.has_key((j_t, c_t, instance)) \
-                                                       else self.compute_h(j_t, c_t, instance, instances)                
-            candidates[h_val] += a_t
+        candidates = self.create_candidates_map()
+        x_i = instance._feature_vector.feature_vector
+        y_i = 1 if instance._label.label == 1 else -1
+        for t in range(self.T):
+            j = self.h_t_list[t][0]
+            c = self.h_t_list[t][1]
+            candidates[y_i] += (self.a_t_list[t] * (1 if self.compute_h(j, c, x_i, self.instances)) == y_i else 0)
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
 
-    #########################################################
-    #  Helper functions -- probably can't do these wrong??? #
-    #########################################################
-    
-    def initialize(self, instances):
-        self.make_labels_list(instances)
-        self.make_features_list(instances)
-        self.make_hypothesis_list(instances)
-        self.set_first_D(instances)
-        self.instances = instances
+    def update_weight(self, a, j, c, instances):
+        z_t = self.compute_z(a, j, c, instances)
+        for i in range(len(instances)):
+            x_i = instance._feature_vector.feature_vector
+            y_i = 1 if instance._label.label == 1 else -1
+            self.D[i] *= ((1.0 / z_t) * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
 
-    def make_labels_list(self, instances):
-        for instance in instances:
-            if instance._label.label not in self.all_labels:
-                self.all_labels.append(instance._label.label) 
+    def compute_z(self, a, j, c, instances):
+        z = 0.0
+        for i in range(len(instances)):
+            instance = instances[i]
+            x_i = instance._feature_vector.feature_vector
+            y_i = 1 if instance._label.label == 1 else -1
+            z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
+        return z
 
-    def make_features_list(self, instances):
-        for instance in instances:
-            for feature in instance._feature_vector.feature_vector:
-                if feature not in self.all_features:
-                    self.all_features.append(feature)
-
-    def make_hypothesis_list(self, instances):
-        for j in self.all_features:
-            all_dim_j_values = self.get_all_dim_j_values(instances, j)
-            for i in range(len(all_dim_j_values) - 1):
-                c = (all_dim_j_values[i] + all_dim_j_values[i + 1]) / 2.0
-                self.hypothesis_list.append((j, c))
-
-    def set_first_D(self, instances):
-        n = len(instances)
+    def initialize_weights(self, n):
         for i in range(n):
             self.D.append(1.0 / n)
 
-    def get_all_dim_j_values(self, instances, j):
-        all_dim_j_values = []
+    def create_all_dim_list(self, instances):
         for instance in instances:
-            x_i = instance._feature_vector.feature_vector
-            if x_i.has_key(j):
-                if x_i[j] not in all_dim_j_values:
-                    all_dim_j_values.append(x_i[j])
-        all_dim_j_values.sort()
-        return all_dim_j_values
+            for feature in instance._feature_vector.feature_vector.keys():
+                if feature not in self.all_dim_list:
+                    self.all_dim_list.append(feature)
+        self.all_dim_list.sort()
 
-    def create_candidate_dict(self):
+    def create_hypothesis_set(self, instances):
+        for j in self.all_dim_list:
+            c_list = create_c_list_for_dim_j(instances, j)
+            for c in c_list:
+                self.hypothesis_set.append((j, c))
+
+    def find_h_t(self, instances):
+        min_error, min_j, min_c = float('inf'), 0, 0
+        for j, c in self.hypothesis_set:
+            error = self.compute_error(j, c, instances)
+            if error < min_error:
+                min_error, min_j, min_c = error, j, c
+        return min_j, min_c
+
+    def compute_error(self, j, c, instances):
+        error = 0.0
+        for i in range(len(instances)):
+            instance = instances[i]
+            x_i = instance._feature_vector.feature_vector
+            y_i = 1 if instance._label.label == 1 else -1
+            error += self.D[i] * (1 if self.compute_h(j, c, x_i, instances) == y_i else 0)
+        return error
+
+    def create_all_labels_list(self. instances):
+        for instance in instances:
+            label = 1 if instance._label.label == 1 else -1
+            if label not in self.all_labels:
+                self.all_labels.append(label)
+
+    def create_candidates_map(self):
         candidates = {}
         for label in self.all_labels:
-            candidates[label] = 0
+            candidates[label] = 0.0
         return candidates
+
+    def compute_h(self, j, c, x_i, instances):
+        candidates = self.create_candidates_map(instances)
+        if x_i.has_key(j) and x_i[j] > c:
+            for instance in instances:
+                if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] > c:
+                    candidates[1 if instance._label.label == 1 else -1] += 1
+        else:
+            for instance in instances:
+                if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] <= c:
+                    candidates[1 if instance._label.label == 1 else -1] += 1
+        candidates = sorted(candidates.items(), key=lambda tup:tup[1], reverse=True)
+        return candidates[0][0]
+
+    def create_c_list_for_dim_j(self, instances, j):
+        c_list = []
+        for instance in instances:
+            for feature, value in instance._feature_vector.feature_vector.items():
+                if feature == j and value not in c_list:
+                    c_list.append(value)
+        return c_list
+
+
+
+
+
+
+
+
+
+
+
+
 
