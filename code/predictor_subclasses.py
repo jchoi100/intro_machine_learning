@@ -230,6 +230,8 @@ class AdaBoost(Predictor):
         self.all_dim_list = []
         self.all_labels = []
         self.instances = []
+        self.h_value_cache = {}
+        self.z_value_cache = {}
 
     def train(self, instances):
         self.instances = instances
@@ -258,7 +260,7 @@ class AdaBoost(Predictor):
         for t in range(self.T):
             j = self.h_t_list[t][0]
             c = self.h_t_list[t][1]
-            candidates[y_i] += (self.a_t_list[t] * (1 if self.compute_h(j, c, x_i, self.instances)) == y_i else 0)
+            candidates[y_i] += (self.a_t_list[t] * (1 if self.compute_h(j, c, x_i, self.instances) == y_i else 0))
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
 
@@ -270,13 +272,17 @@ class AdaBoost(Predictor):
             self.D[i] *= ((1.0 / z_t) * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
 
     def compute_z(self, a, j, c, instances):
-        z = 0.0
-        for i in range(len(instances)):
-            instance = instances[i]
-            x_i = instance._feature_vector.feature_vector
-            y_i = 1 if instance._label.label == 1 else -1
-            z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
-        return z
+        if self.z_value_cache.has_key((j,c,a)):
+            return z_value_cache[(j,c,a)]
+        else:
+            z = 0.0
+            for i in range(len(instances)):
+                instance = instances[i]
+                x_i = instance._feature_vector.feature_vector
+                y_i = 1 if instance._label.label == 1 else -1
+                z += (self.D[i] * exp(-a*y_i*self.compute_h(j, c, x_i, instances)))
+            z_value_cache[(j,c,a)] = z
+            return z
 
     def initialize_weights(self, n):
         for i in range(n):
@@ -292,8 +298,8 @@ class AdaBoost(Predictor):
     def create_hypothesis_set(self, instances):
         for j in self.all_dim_list:
             c_list = create_c_list_for_dim_j(instances, j)
-            for c in c_list:
-                self.hypothesis_set.append((j, c))
+            for i in range(len(c_list) - 1):
+                self.hypothesis_set.append((j, (c_list[i] + c_list[i + 1]) / 2.0))
 
     def find_h_t(self, instances):
         min_error, min_j, min_c = float('inf'), 0, 0
@@ -325,17 +331,21 @@ class AdaBoost(Predictor):
         return candidates
 
     def compute_h(self, j, c, x_i, instances):
-        candidates = self.create_candidates_map(instances)
-        if x_i.has_key(j) and x_i[j] > c:
-            for instance in instances:
-                if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] > c:
-                    candidates[1 if instance._label.label == 1 else -1] += 1
+        if self.h_value_cache.has_key((j,c,x_i)):
+            return self.h_value_cache[(j,c,x_i)]
         else:
-            for instance in instances:
-                if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] <= c:
-                    candidates[1 if instance._label.label == 1 else -1] += 1
-        candidates = sorted(candidates.items(), key=lambda tup:tup[1], reverse=True)
-        return candidates[0][0]
+            candidates = self.create_candidates_map(instances)
+            if x_i.has_key(j) and x_i[j] > c:
+                for instance in instances:
+                    if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] > c:
+                        candidates[1 if instance._label.label == 1 else -1] += 1
+            else:
+                for instance in instances:
+                    if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector[j] <= c:
+                        candidates[1 if instance._label.label == 1 else -1] += 1
+            candidates = sorted(candidates.items(), key=lambda tup:tup[1], reverse=True)
+            self.h_value_cache[(j,c,x_i)] = candidates[0][0]
+            return candidates[0][0]
 
     def create_c_list_for_dim_j(self, instances, j):
         c_list = []
