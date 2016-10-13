@@ -230,8 +230,6 @@ class AdaBoost(Predictor):
         self.a_t_list = []
         self.hypothesis_list = []
         self.instances = []
-        self.h_cache = {}
-        self.z_cache = {}
 
     def train(self, instances):
         self.initialize(instances)
@@ -256,7 +254,7 @@ class AdaBoost(Predictor):
         for i in range(len(self.instances)):
             instance = self.instances[i]
             y_i = 1.0 if instance._label.label == 1 else -1.0
-            h_val = self.compute_h(j, c, instance, i, False)
+            h_val = self.compute_h(j, c, instance)
             z_val = self.compute_z(j, c, a_t)
             self.D[i] *= ((1.0 / z_val) * exp(-a_t * y_i * h_val))
 
@@ -275,69 +273,43 @@ class AdaBoost(Predictor):
         for i in range(len(self.instances)):
             instance = self.instances[i]
             y_i = 1.0 if instance._label.label == 1 else -1.0
-            h_val = self.compute_h(j, c, instance, i, False)
+            h_val = self.compute_h(j, c, instance)
             epsilon += self.D[i] * (1.0 if h_val != y_i else 0.0)
         return epsilon
 
-    def compute_h(self, j, c, instance, i, is_prediction):
-        if not is_prediction:
-            if self.h_cache.has_key((j, c, i)):
-                return self.h_cache[(j, c, i)]
-            else:
-                x_i = instance._feature_vector.feature_vector
-                candidates = self.create_candidate_dict()
-                if x_i.has_key(j) and x_i[j] > c:
-                    for instance in self.instances:
-                        x_i_prime = instance._feature_vector.feature_vector
-                        y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                        if x_i_prime.has_key(j) and x_i_prime[j] > c:
-                            candidates[y_i_prime] += 1
-                else:
-                    for instance in self.instances:
-                        x_i_prime = instance._feature_vector.feature_vector
-                        y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                        if x_i_prime.has_key(j) and x_i_prime[j] <= c:
-                            candidates[y_i_prime] += 1
-                candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-                self.h_cache[(j, c, i)] = candidates[0][0]
-                return candidates[0][0]
+    def compute_h(self, j, c, instance):
+        x_i = instance._feature_vector.feature_vector
+        candidates = self.create_candidate_dict()
+        if x_i.has_key(j) and x_i[j] > c:
+            for instance in self.instances:
+                x_i_prime = instance._feature_vector.feature_vector
+                y_i_prime = 1.0 if instance._label.label == 1 else -1.0
+                if x_i_prime.has_key(j) and x_i_prime[j] > c:
+                    candidates[y_i_prime] += 1
         else:
-            x_i = instance._feature_vector.feature_vector
-            candidates = self.create_candidate_dict()
-            if x_i.has_key(j) and x_i[j] > c:
-                for instance in self.instances:
-                    x_i_prime = instance._feature_vector.feature_vector
-                    y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                    if x_i_prime.has_key(j) and x_i_prime[j] > c:
-                        candidates[y_i_prime] += 1
-            else:
-                for instance in self.instances:
-                    x_i_prime = instance._feature_vector.feature_vector
-                    y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                    if x_i_prime.has_key(j) and x_i_prime[j] <= c:
-                        candidates[y_i_prime] += 1
-            candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-            return candidates[0][0]
+            for instance in self.instances:
+                x_i_prime = instance._feature_vector.feature_vector
+                y_i_prime = 1.0 if instance._label.label == 1 else -1.0
+                if x_i_prime.has_key(j) and x_i_prime[j] <= c:
+                    candidates[y_i_prime] += 1
+        candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
+        return candidates[0][0]
 
     def compute_z(self, j, c, a_t):
-        if self.z_cache.has_key((j, c, a_t)):
-            return self.z_cache[(j, c, a_t)]
-        else:
-            z = 0.0
-            for i in range(len(self.instances)):
-                instance = self.instances[i]
-                y_i = 1.0 if instance._label.label == 1 else -1.0
-                h_val = self.compute_h(j, c, instance, 0, False)    
-                z += (self.D[i] * exp(-a_t * y_i * h_val))
-            self.z_cache[(j, c, a_t)] = z
-            return z
+        z = 0.0
+        for i in range(len(self.instances)):
+            instance = self.instances[i]
+            y_i = 1.0 if instance._label.label == 1 else -1.0
+            h_val = self.compute_h(j, c, instance)    
+            z += (self.D[i] * exp(-a_t * y_i * h_val))
+        return z
 
     def predict(self, instance):
         candidates = self.create_candidate_dict()
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
-            h_val = self.compute_h(j_t, c_t, instance, 0, True)                
+            h_val = self.compute_h(j_t, c_t, instance)                
             candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
