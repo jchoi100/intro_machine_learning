@@ -233,7 +233,6 @@ class AdaBoost(Predictor):
 
     def train(self, instances):
         self.initialize(instances)
-        print(self.all_features)
         for t in range(self.T):
             j, c = self.get_h_t()
             e_t = self.compute_epsilon(j, c)
@@ -247,8 +246,6 @@ class AdaBoost(Predictor):
             self.h_t_list.append((j, c))
             self.a_t_list.append(a_t)
             self.update_weights(j, c, a_t)
-        print(self.h_t_list)
-        print(self.a_t_list)
 
     def update_weights(self, j, c, a_t):
         for i in range(len(self.instances)):
