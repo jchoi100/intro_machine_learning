@@ -236,7 +236,7 @@ class AdaBoost(Predictor):
         for t in range(self.T):
             j, c = self.get_h_t()
             e_t = self.compute_epsilon(j, c)
-            if t == 0 and e_t == 0:
+            if t == 0 and e_t < 0.000001:
                 self.h_t_list.append((j, c))
                 self.a_t_list.append(1.0)
                 break
@@ -275,22 +275,26 @@ class AdaBoost(Predictor):
         return epsilon
 
     def compute_h(self, j, c, instance):
-        x_i = instance._feature_vector.feature_vector
-        candidates = self.create_candidate_dict()
-        if x_i.has_key(j) and x_i[j] > c:
-            for instance in self.instances:
-                x_i_prime = instance._feature_vector.feature_vector
-                y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                if x_i_prime.has_key(j) and x_i_prime[j] > c:
-                    candidates[y_i_prime] += 1
-        else:
-            for instance in self.instances:
-                x_i_prime = instance._feature_vector.feature_vector
-                y_i_prime = 1.0 if instance._label.label == 1 else -1.0
-                if x_i_prime.has_key(j) and x_i_prime[j] <= c:
-                    candidates[y_i_prime] += 1
-        candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-        return candidates[0][0]
+        if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector > c:
+            return 1
+        return -1
+
+        # x_i = instance._feature_vector.feature_vector
+        # candidates = self.create_candidate_dict()
+        # if x_i.has_key(j) and x_i[j] > c:
+        #     for instance in self.instances:
+        #         x_i_prime = instance._feature_vector.feature_vector
+        #         y_i_prime = 1.0 if instance._label.label == 1 else -1.0
+        #         if x_i_prime.has_key(j) and x_i_prime[j] > c:
+        #             candidates[y_i_prime] += 1
+        # else:
+        #     for instance in self.instances:
+        #         x_i_prime = instance._feature_vector.feature_vector
+        #         y_i_prime = 1.0 if instance._label.label == 1 else -1.0
+        #         if x_i_prime.has_key(j) and x_i_prime[j] <= c:
+        #             candidates[y_i_prime] += 1
+        # candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
+        # return candidates[0][0]
 
     def compute_z(self, j, c, a_t):
         z = 0.0
@@ -302,14 +306,17 @@ class AdaBoost(Predictor):
         return z
 
     def predict(self, instance):
-        candidates = self.create_candidate_dict()
+        # candidates = self.create_candidate_dict()
+        sum_val = 0.0
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
-            h_val = self.compute_h(j_t, c_t, instance)                
-            candidates[h_val] += a_t
-        candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-        return candidates[0][0]
+            h_val = self.compute_h(j_t, c_t, instance)
+            sum_val += a_t * h_val                
+            # candidates[h_val] += a_t
+        # candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
+        # return candidates[0][0]
+        return 1 if sum_val >= 0 else -1
 
     #########################################################
     #  Helper functions                                     #
