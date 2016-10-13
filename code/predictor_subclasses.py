@@ -317,7 +317,6 @@ class AdaBoost(Predictor):
                     if x_i_prime.has_key(j) and x_i_prime[j] <= c:
                         candidates[y_i_prime] += 1
             candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-            self.h_cache[(j, c, i)] = candidates[0][0]
             return candidates[0][0]
 
     def compute_z(self, j, c, a_t):
@@ -338,7 +337,7 @@ class AdaBoost(Predictor):
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
-            h_val = self.compute_h(j_t, c_t, instance, i, True)                
+            h_val = self.compute_h(j_t, c_t, instance, 0, True)                
             candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return candidates[0][0]
