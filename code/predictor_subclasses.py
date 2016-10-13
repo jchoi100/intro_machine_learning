@@ -274,10 +274,10 @@ class AdaBoost(Predictor):
             epsilon += self.D[i] * (1.0 if h_val != y_i else 0.0)
         return epsilon
 
-    def compute_h_predict(self, j, c, instance):
-        if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector > c:
-            return 1
-        return -1
+    # def compute_h_predict(self, j, c, instance):
+    #     if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector > c:
+    #         return 1
+    #     return -1
 
     def compute_h(self, j, c, instance):
         x_i = instance._feature_vector.feature_vector
@@ -307,17 +307,17 @@ class AdaBoost(Predictor):
         return z
 
     def predict(self, instance):
-        # candidates = self.create_candidate_dict()
-        sum_val = 0.0
+        candidates = self.create_candidate_dict()
+        # sum_val = 0.0
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
             h_val = self.compute_h_predict(j_t, c_t, instance)
-            sum_val += a_t * h_val                
-            # candidates[h_val] += a_t
-        # candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
-        # return candidates[0][0]
-        return 1 if sum_val >= 0 else -1
+            # sum_val += a_t * h_val                
+            candidates[h_val] += a_t
+        candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
+        return 1 if candidates[0][0] == 1 else 0
+        # return 1 if sum_val >= 0 else -1
 
     #########################################################
     #  Helper functions                                     #
