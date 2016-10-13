@@ -312,7 +312,7 @@ class AdaBoost(Predictor):
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
-            h_val = self.compute_h_predict(j_t, c_t, instance)
+            h_val = self.compute_h(j_t, c_t, instance)
             # sum_val += a_t * h_val                
             candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
