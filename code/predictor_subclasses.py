@@ -1,6 +1,7 @@
 from cs475_types import Predictor, ClassificationLabel
 from math import sqrt, log, exp
 
+""" HW1 """
 class Perceptron(Predictor):
 
     def __init__(self, learning_rate, iterations):
@@ -41,7 +42,7 @@ class Perceptron(Predictor):
                 dot_product += (self.w[key] * value)
         return dot_product
 
-
+""" HW1 """
 class AveragedPerceptron(Predictor):
 
     def __init__(self, learning_rate, iterations):
@@ -87,7 +88,7 @@ class AveragedPerceptron(Predictor):
     def sign(self, x_i):
         return 1 if self.compute_dot_product(x_i) >= 0 else 0
 
-
+""" HW2 """
 class MarginPerceptron(Predictor):
 
     def __init__(self, learning_rate, iterations):
@@ -127,7 +128,7 @@ class MarginPerceptron(Predictor):
                 dot_product += (self.w[key] * value)
         return dot_product
 
-
+""" HW2 """
 class Pegasos(Predictor):
 
     def __init__(self, iterations, pegasos_lambda):
@@ -170,7 +171,7 @@ class Pegasos(Predictor):
                 dot_product += (self.w[key] * value)
         return dot_product
 
-
+""" HW3 """
 class KNN(Predictor):
 
     def __init__(self, knn, is_weighted):
@@ -218,7 +219,7 @@ class KNN(Predictor):
             distance += (known_instance_value - test_instance_value)**2
         return sqrt(distance)
 
-
+""" HW3 """
 class AdaBoost(Predictor):
 
     def __init__(self, num_boosting_iterations):
@@ -274,11 +275,6 @@ class AdaBoost(Predictor):
             epsilon += self.D[i] * (1.0 if h_val != y_i else 0.0)
         return epsilon
 
-    # def compute_h_predict(self, j, c, instance):
-    #     if instance._feature_vector.feature_vector.has_key(j) and instance._feature_vector.feature_vector > c:
-    #         return 1
-    #     return -1
-
     def compute_h(self, j, c, instance):
         x_i = instance._feature_vector.feature_vector
         candidates = self.create_candidate_dict()
@@ -308,16 +304,13 @@ class AdaBoost(Predictor):
 
     def predict(self, instance):
         candidates = self.create_candidate_dict()
-        # sum_val = 0.0
         for t in range(len(self.h_t_list)):
             a_t = self.a_t_list[t]
             j_t, c_t = self.h_t_list[t]
             h_val = self.compute_h(j_t, c_t, instance)
-            # sum_val += a_t * h_val                
             candidates[h_val] += a_t
         candidates = sorted(candidates.items(), key=lambda tup: tup[1], reverse=True)
         return 1 if candidates[0][0] == 1 else 0
-        # return 1 if sum_val >= 0 else -1
 
     #########################################################
     #  Helper functions                                     #
@@ -373,15 +366,161 @@ class AdaBoost(Predictor):
         return candidates
 
 
+""" HW4 """
+class LambdaMeans(Predictor):
+
+    def __init__(self, cluster_lambda, clustering_training_iterations):
+        self.cluster_lambda = cluster_lambda
+        self.T = clustering_training_iterations
+        self.N = 0.0
+        self.all_features = []
+        self.instances = []
+        self.mu_vector = {}
+        self.K = 1
+        self.r_vector = {}
+
+    def train(self, instances):
+        self.initialize(instances)
+        for t in range(self.T):
+            self.E_step()
+            self.M_step()
+
+    def E_step(self):
+        for i in range(self.N):
+            curr_instance = self.instances[i]
+            min_cluster = 0
+            min_distance = float('inf')
+            for k in range(self.K):
+                k_index = k + 1
+                curr_prototype = self.mu_vector[k_index]
+                curr_distance = self.compute_euclidian_distance(curr_prototype, curr_instance._feature_vector.feature_vector)
+                if curr_distance < min_distance and curr_distance <= self.cluster_lambda:
+                    min_cluster = k_index
+                    min_distance = curr_distance
+            if min_distance > self.cluster_lambda:
+                self.K += 1
+                self.r_vector[i] = self.K
+                self.mu_vector[self.K] = curr_instance
+            else:
+                self.r_vector[i] = min_cluster
+
+    def M_step(self):
+        for k in range(self.K):
+            k_index = k + 1
+            sum_rnk = 0.0
+            for instance_number, cluster_number in self.r_vector.items():
+                if cluster_number == k_index:
+                    sum_rnk += 1
+            new_mu_k = self.set_empty_prototype()
+            for i in range(self.N):
+                if self.r_vector[i] == k_index:
+                    feature_vector_to_sum = self.instances[i]._feature_vector.feature_vector
+                    for feature, value in feature_vector_to_sum.items():
+                        new_mu_k[feature] += value
+            for key, value in new_mu_k.items():
+                new_mu_k[key] /= sum_rnk
+            self.mu_vector[k_index] = new_mu_k
+
+    def set_empty_prototype(self):
+        new_prototpye = {}
+        for feature in self.all_features:
+            new_prototpye[feature] = 0.0
+        return new_prototpye
+
+    def predict(self, instance):
+        # Assign example to the closest cluster.
+        # This does not create any new clusters. i.e. no change in K!
+        x_i = instance._feature_vector.feature_vector
+        min_cluster = 0
+        min_distance = float('inf')
+        for k in range(self.K):
+            k_index = k + 1
+            curr_prototype = self.mu_vector[k_index]
+            curr_distance = self.compute_euclidian_distance(curr_prototype, instance._feature_vector.feature_vector)
+            if curr_distance < min_distance:
+                min_cluster = k_index
+                min_distance = curr_distance
+        return min_cluster
+
+    def initialize(self, instances):
+        self.instances = instances
+        self.N = len(self.instances)
+
+        # 1. Take note of all the features that appear in all the instances
+        for instance in self.instances:
+            x_i = instance._feature_vector.feature_vector # type: dict(feature, value)
+            for feature, value in x_i.items():
+                if feature not in self.all_features:
+                    self.all_features.append(feature)
+
+        # 2. Set mu_1
+        self.set_first_mu()
+
+        # 3. Check lambda value 0
+        if self.cluster_lambda == 0:
+            self.set_default_lambda()
+
+        # 4. Initialize r_nk vector. r[ith instance] = cluster k = 0
+        for i in range(self.N):
+            self.r_vector[i] = 0
+
+    def set_first_mu(self):
+        first_mu = {}
+        for feature in self.all_features:
+            first_mu[feature] = 0.0
+        for instance in self.instances:
+            x_i = instance._feature_vector.feature_vector
+            for feature, value in x_i.items():
+                first_mu[feature] += value
+        for feature in first_mu.keys():
+            first_mu[feature] /= (self.N * 1.0)
+        self.mu_vector[1] = first_mu
+
+    def set_default_lambda(self):
+        self.cluster_lambda = 0.0
+        first_mu = self.mu_vector[1]
+        for instance in self.instances:
+            x_i = instance._feature_vector.feature_vector
+            self.cluster_lambda += self.compute_euclidian_distance(x_i, first_mu)**2
+        self.cluster_lambda /= (self.N * 1.0)
+
+    def compute_euclidian_distance(self, v1, v2):
+        dist = 0.0
+        for feature in self.all_features:
+            v1_value = v1[feature] if v1.has_key(feature) else 0.0
+            v2_value = v2[feature] if v2.has_key(feature) else 0.0
+            dist += (v1_value - v2_value)**2
+        return sqrt(dist)
 
 
+    """
+    NOTES: train
 
+    Do NOT use the labels in the training data during training!!!
 
+    Learn the cluster parameters based on the training examples.
+    The result of this method are the cluster parameters:
+    the means mu_k and number of clusters K.
+    """
+    """
+    NOTES: predict
 
+    Since the clustering algorithm cannot read the correct labels,
+    we must be clear about what "label" you are returning here!!
 
+    This method should label the examples by assigning them to the
+    closest cluster. The value of the label should be the cluster 
+    index. (May use either 0-based indexing or 1-indexing for cluster
+    index k) You should NOT increase the number of available clusters
+    at prediction time.
+    """
 
+       
+""" HW4 """
+# class NaiveBayes(Predictor):
 
+#     def train(self, instances):
 
+#     def predict(self, instance):
 
-
-
+#        

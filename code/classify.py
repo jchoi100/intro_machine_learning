@@ -49,10 +49,8 @@ def get_args():
     parser = argparse.ArgumentParser(description="This is the main test harness for your algorithms.")
 
     parser.add_argument("--data", type=str, required=True, help="The data to use for training or testing.")
-    parser.add_argument("--mode", type=str, required=True, choices=["train", "test"],
-                        help="Operating mode: train or test.")
-    parser.add_argument("--model-file", type=str, required=True,
-                        help="The name of the model file to create/load.")
+    parser.add_argument("--mode", type=str, required=True, choices=["train", "test"], help="Operating mode: train or test.")
+    parser.add_argument("--model-file", type=str, required=True, help="The name of the model file to create/load.")
     parser.add_argument("--predictions-file", type=str, help="The predictions file to create.")
     parser.add_argument("--algorithm", type=str, help="The name of the algorithm for training.")
 
@@ -62,6 +60,9 @@ def get_args():
     parser.add_argument("--pegasos-lambda", type=float, help="The regularization parameter for Pegasos.", default=1e-4)
     parser.add_argument("--knn", type=int, help="The value of K for KNN classification.", default=5)
     parser.add_argument("--num-boosting-iterations", type=int, help="The number of boosting iterations to run.", default=10)
+    parser.add_argument("--cluster-lambda", type=float, help="The value of lambda in lambda-means.", default=0.0)
+    parser.add_argument("--num-clusters", type=int, help="The number of clusters in Naive Bayes clustering.", default=3)
+    parser.add_argument("--clustering-training-iterations", type=int, help="The number of clustering iterations.", default=10)
 
     args = parser.parse_args()
     check_args(args)
@@ -95,6 +96,10 @@ def train(instances, args):
         predictor = KNN(args.knn, True)
     elif args.algorithm == "adaboost":
         predictor = AdaBoost(args.num_boosting_iterations)
+    elif args.algorithm == "lambda_means":
+        predictor = LambdaMeans(args.cluster_lambda, args.clustering_training_iterations)
+    elif args.algorithm == "nb_clustering":
+        predictor = NaiveBayes(args.num_clusters, args.clustering_training_iterations)
     else:
         raise ValueError("Unsupported algorithm type: check your --algorithm argument.")
     predictor.train(instances)
