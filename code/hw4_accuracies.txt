@@ -1,0 +1,22 @@
+
+lambda_means
+
+VI: 2.752644 | speech.dev
+VI: 1.096956 | vision.dev
+VI: 0.834740 | finance.dev
+VI: 0.634950 | bio.dev
+VI: 3.550265 | easy.dev
+VI: 0.691346 | hard.dev
+VI: 1.639153 | speech.mc.dev
+
+---------------------------
+
+nb_clustering
+
+VI:  | speech.dev
+VI:  | vision.dev
+VI:  | finance.dev
+VI:  | bio.dev
+VI:  | easy.dev
+VI:  | hard.dev
+VI:  | speech.mc.dev

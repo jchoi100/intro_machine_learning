@@ -48,6 +48,7 @@ def load_data(filename):
 def get_args():
     parser = argparse.ArgumentParser(description="This is the main test harness for your algorithms.")
 
+    # Default arguments.
     parser.add_argument("--data", type=str, required=True, help="The data to use for training or testing.")
     parser.add_argument("--mode", type=str, required=True, choices=["train", "test"], help="Operating mode: train or test.")
     parser.add_argument("--model-file", type=str, required=True, help="The name of the model file to create/load.")
@@ -55,11 +56,17 @@ def get_args():
     parser.add_argument("--algorithm", type=str, help="The name of the algorithm for training.")
 
     # New command line arguments.
+    
+    # HW1 & HW2
     parser.add_argument("--online-learning-rate", type=float, help="The learning rate for perceptron", default=1.0)
     parser.add_argument("--online-training-iterations", type=int, help="The number of training iterations for online methods.", default=5)
     parser.add_argument("--pegasos-lambda", type=float, help="The regularization parameter for Pegasos.", default=1e-4)
+    
+    # HW3
     parser.add_argument("--knn", type=int, help="The value of K for KNN classification.", default=5)
     parser.add_argument("--num-boosting-iterations", type=int, help="The number of boosting iterations to run.", default=10)
+
+    # HW4
     parser.add_argument("--cluster-lambda", type=float, help="The value of lambda in lambda-means.", default=0.0)
     parser.add_argument("--num-clusters", type=int, help="The number of clusters in Naive Bayes clustering.", default=3)
     parser.add_argument("--clustering-training-iterations", type=int, help="The number of clustering iterations.", default=10)
