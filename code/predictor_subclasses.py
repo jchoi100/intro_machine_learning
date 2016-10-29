@@ -1,6 +1,5 @@
 from cs475_types import Predictor, ClassificationLabel
 from math import sqrt, log, exp
-from numba import jit
 
 """ HW1 """
 class Perceptron(Predictor):
@@ -380,14 +379,12 @@ class LambdaMeans(Predictor):
         self.K = 0
         self.r_vector = {}
 
-    @jit
     def train(self, instances):
         self.initialize(instances)
         for t in range(self.T):
             self.E_step()
             self.M_step()
 
-    @jit
     def E_step(self):
         # print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         for i in range(self.N):
@@ -422,7 +419,6 @@ class LambdaMeans(Predictor):
         # print "&&&&&&&&&&&&&&&&&"
         # print self.r_vector
 
-    @jit
     def M_step(self):
         for k in range(self.K):
             sum_rnk = 0.0
@@ -442,14 +438,12 @@ class LambdaMeans(Predictor):
                     new_mu_k[key] /= sum_rnk
             self.mu_vector[k] = new_mu_k
 
-    @jit
     def set_empty_prototype(self):
         new_prototpye = {}
         for feature in self.all_features:
             new_prototpye[feature] = 0.0
         return new_prototpye
 
-    @jit
     def predict(self, instance):
         # Assign example to the closest cluster.
         # This does not create any new clusters. i.e. no change in K!
@@ -464,7 +458,6 @@ class LambdaMeans(Predictor):
                 min_distance = curr_distance
         return min_cluster
 
-    @jit
     def initialize(self, instances):
         self.instances = instances
         self.N = len(self.instances)
@@ -486,7 +479,6 @@ class LambdaMeans(Predictor):
         for i in range(self.N):
             self.r_vector[i] = -1
 
-    @jit
     def set_first_mu(self):
         first_mu = {}
         for feature in self.all_features:
@@ -500,7 +492,6 @@ class LambdaMeans(Predictor):
         self.mu_vector[self.K] = first_mu
         self.K += 1
 
-    @jit
     def set_default_lambda(self):
         self.cluster_lambda = 0.0
         first_mu = self.mu_vector[0]
@@ -509,7 +500,6 @@ class LambdaMeans(Predictor):
             self.cluster_lambda += self.compute_euclidian_distance(x_i, first_mu)**2
         self.cluster_lambda /= (self.N * 1.0)
 
-    @jit
     def compute_euclidian_distance(self, v1, v2):
         dist = 0.0
         for feature in self.all_features:
