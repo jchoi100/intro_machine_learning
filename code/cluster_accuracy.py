@@ -76,4 +76,4 @@ VI = HA + HB - 2.0*MI
 #print "H(B)", HB
 #print "MI", MI
 
-print 'VI: %f' % VI
+print 'VI: %f | %s' % (VI, str(data_file))

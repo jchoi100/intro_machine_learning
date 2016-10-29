@@ -1,5 +1,6 @@
 from cs475_types import Predictor, ClassificationLabel
 from math import sqrt, log, exp
+from numba import jit
 
 """ HW1 """
 class Perceptron(Predictor):
@@ -376,57 +377,79 @@ class LambdaMeans(Predictor):
         self.all_features = []
         self.instances = []
         self.mu_vector = {}
-        self.K = 1
+        self.K = 0
         self.r_vector = {}
 
+    @jit
     def train(self, instances):
         self.initialize(instances)
         for t in range(self.T):
             self.E_step()
             self.M_step()
 
+    @jit
     def E_step(self):
+        # print "AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
         for i in range(self.N):
+            # print "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB"
             curr_instance = self.instances[i]
-            min_cluster = 0
+            min_cluster = -1
             min_distance = float('inf')
             for k in range(self.K):
-                k_index = k + 1
-                curr_prototype = self.mu_vector[k_index]
+                # print "@@@@@@@@@"
+                curr_prototype = self.mu_vector[k]
                 curr_distance = self.compute_euclidian_distance(curr_prototype, curr_instance._feature_vector.feature_vector)
-                if curr_distance < min_distance and curr_distance <= self.cluster_lambda:
-                    min_cluster = k_index
+                # print self.cluster_lambda
+                # print curr_distance**2
+                # print min_distance
+                if curr_distance < min_distance and curr_distance**2 <= self.cluster_lambda:
+                    # print "!!!!!"
+                    min_cluster = k
                     min_distance = curr_distance
-            if min_distance > self.cluster_lambda:
-                self.K += 1
+                elif curr_distance == min_distance and curr_distance**2 <= self.cluster_lambda and k < min_cluster:
+                    # Tie breaking schema
+                    min_cluster = k
+                # print min_distance
+                # print min_cluster
+                # print "$$$$$$$$$$"
+            if min_distance**2 > self.cluster_lambda:
+                # print "************"
                 self.r_vector[i] = self.K
-                self.mu_vector[self.K] = curr_instance
+                self.mu_vector[self.K] = curr_instance._feature_vector.feature_vector
+                self.K += 1
             else:
                 self.r_vector[i] = min_cluster
+        # print "&&&&&&&&&&&&&&&&&"
+        # print self.r_vector
 
+    @jit
     def M_step(self):
         for k in range(self.K):
-            k_index = k + 1
             sum_rnk = 0.0
             for instance_number, cluster_number in self.r_vector.items():
-                if cluster_number == k_index:
+                if cluster_number == k:
                     sum_rnk += 1
             new_mu_k = self.set_empty_prototype()
             for i in range(self.N):
-                if self.r_vector[i] == k_index:
+                if self.r_vector[i] == k:
                     feature_vector_to_sum = self.instances[i]._feature_vector.feature_vector
                     for feature, value in feature_vector_to_sum.items():
                         new_mu_k[feature] += value
-            for key, value in new_mu_k.items():
-                new_mu_k[key] /= sum_rnk
-            self.mu_vector[k_index] = new_mu_k
+            if sum_rnk == 0:
+                new_mu_k = self.set_empty_prototype()
+            else:
+                for key in new_mu_k.keys():
+                    new_mu_k[key] /= sum_rnk
+            self.mu_vector[k] = new_mu_k
 
+    @jit
     def set_empty_prototype(self):
         new_prototpye = {}
         for feature in self.all_features:
             new_prototpye[feature] = 0.0
         return new_prototpye
 
+    @jit
     def predict(self, instance):
         # Assign example to the closest cluster.
         # This does not create any new clusters. i.e. no change in K!
@@ -434,25 +457,24 @@ class LambdaMeans(Predictor):
         min_cluster = 0
         min_distance = float('inf')
         for k in range(self.K):
-            k_index = k + 1
-            curr_prototype = self.mu_vector[k_index]
+            curr_prototype = self.mu_vector[k]
             curr_distance = self.compute_euclidian_distance(curr_prototype, instance._feature_vector.feature_vector)
             if curr_distance < min_distance:
-                min_cluster = k_index
+                min_cluster = k
                 min_distance = curr_distance
         return min_cluster
 
+    @jit
     def initialize(self, instances):
         self.instances = instances
         self.N = len(self.instances)
 
-        # 1. Take note of all the features that appear in all the instances
+        # 1. Make note of all the features that appear in all the instances
         for instance in self.instances:
             x_i = instance._feature_vector.feature_vector # type: dict(feature, value)
             for feature, value in x_i.items():
                 if feature not in self.all_features:
                     self.all_features.append(feature)
-
         # 2. Set mu_1
         self.set_first_mu()
 
@@ -460,10 +482,11 @@ class LambdaMeans(Predictor):
         if self.cluster_lambda == 0:
             self.set_default_lambda()
 
-        # 4. Initialize r_nk vector. r[ith instance] = cluster k = 0
+        # 4. Initialize r_nk vector. r[ith instance] = cluster k = -1
         for i in range(self.N):
-            self.r_vector[i] = 0
+            self.r_vector[i] = -1
 
+    @jit
     def set_first_mu(self):
         first_mu = {}
         for feature in self.all_features:
@@ -474,16 +497,19 @@ class LambdaMeans(Predictor):
                 first_mu[feature] += value
         for feature in first_mu.keys():
             first_mu[feature] /= (self.N * 1.0)
-        self.mu_vector[1] = first_mu
+        self.mu_vector[self.K] = first_mu
+        self.K += 1
 
+    @jit
     def set_default_lambda(self):
         self.cluster_lambda = 0.0
-        first_mu = self.mu_vector[1]
+        first_mu = self.mu_vector[0]
         for instance in self.instances:
             x_i = instance._feature_vector.feature_vector
             self.cluster_lambda += self.compute_euclidian_distance(x_i, first_mu)**2
         self.cluster_lambda /= (self.N * 1.0)
 
+    @jit
     def compute_euclidian_distance(self, v1, v2):
         dist = 0.0
         for feature in self.all_features:
@@ -502,6 +528,7 @@ class LambdaMeans(Predictor):
     The result of this method are the cluster parameters:
     the means mu_k and number of clusters K.
     """
+
     """
     NOTES: predict
 
