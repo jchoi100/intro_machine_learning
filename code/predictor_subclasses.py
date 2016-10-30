@@ -379,6 +379,14 @@ class LambdaMeans(Predictor):
         self.K = 0
         self.r_vector = {}
 
+    def initialize(self, instances):
+        self.instances = instances
+        self.N = len(self.instances)
+        self.note_all_features()
+        self.set_first_mu()
+        self.set_default_lambda()
+        self.set_rnk()
+
     def train(self, instances):
         self.initialize(instances)
         for t in range(self.T):
@@ -387,79 +395,74 @@ class LambdaMeans(Predictor):
 
     def E_step(self):
         for i in range(self.N):
-            curr_instance = self.instances[i]
-            min_k = -1
-            min_distance = float('inf')
+            x_i = self.instances[i]._feature_vector.feature_vector
+            min_k, min_distance = -1, float('inf')
             for k in range(self.K):
-                curr_prototype = self.mu_vector[k]
-                curr_distance = self.distance(curr_prototype, curr_instance._feature_vector.feature_vector)
+                curr_distance = self.distance(self.mu_vector[k], x_i)
                 if curr_distance < min_distance and curr_distance <= self.cluster_lambda:
-                    min_k = k
-                    min_distance = curr_distance
+                    min_k, min_distance = k, curr_distance
                 elif curr_distance == min_distance and curr_distance <= self.cluster_lambda and k < min_k:
-                    min_k = k # Tie breaking scheme.
+                    min_k = k # Break ties.
             if min_distance > self.cluster_lambda:
-                # Start a new cluster: increment K afterwards.
+                # Start a new cluster and increment K afterwards.
                 self.r_vector[i] = self.K
-                self.mu_vector[self.K] = curr_instance._feature_vector.feature_vector
+                self.mu_vector[self.K] = x_i
                 self.K += 1
             else:
                 self.r_vector[i] = min_k
 
     def M_step(self):
         for k in range(self.K):
-            new_mu_k = self.set_empty_prototype()
-            sum_rnk = 0.0
-            for i, cluster_number in self.r_vector.items():
-                if cluster_number == k:
-                    sum_rnk += 1
-            for i in range(self.N):
-                if self.r_vector[i] == k:
-                    feature_vector_to_sum = self.instances[i]._feature_vector.feature_vector
-                    for j in feature_vector_to_sum.keys():
-                        new_mu_k[j] += feature_vector_to_sum[j]
+            sum_rnk = self.sum_up_rnk(k)
             if sum_rnk == 0:
                 new_mu_k = self.set_empty_prototype()
             else:
-                for j in new_mu_k.keys():
-                    new_mu_k[j] /= sum_rnk
+                new_mu_k = self.compute_new_mu_k(k, sum_rnk)
             self.mu_vector[k] = new_mu_k
 
     def predict(self, instance):
         # Assign example to the closest cluster.
         # This does not create any new clusters. 
         # i.e. no change in K!
-        x_i = instance._feature_vector.feature_vector
-        min_k = -1
-        min_distance = float('inf')
+        min_k, min_distance = -1, float('inf')
         for k in range(self.K):
-            curr_prototype = self.mu_vector[k]
-            curr_distance = self.distance(curr_prototype, instance._feature_vector.feature_vector)
+            curr_distance = self.distance(self.mu_vector[k], instance._feature_vector.feature_vector)
             if curr_distance < min_distance:
+                min_k, min_distance = k, curr_distance
+            elif curr_distance == min_distance and k < min_k:
                 min_k = k
-                min_distance = curr_distance
         return min_k
 
-    def initialize(self, instances):
-        self.instances = instances
-        self.N = len(self.instances)
+    #####################################################
+    # M-step() helper functions.
+    #####################################################
 
-        # 1. Make note of all the features that appear in all the instances
+    def compute_new_mu_k(self, k, sum_rnk):
+        new_mu_k = self.set_empty_prototype()
+        for i in range(self.N):
+            if self.r_vector[i] == k:
+                feature_vector_to_sum = self.instances[i]._feature_vector.feature_vector
+                for j in feature_vector_to_sum.keys():
+                    new_mu_k[j] += feature_vector_to_sum[j] / sum_rnk
+        return new_mu_k
+
+    def sum_up_rnk(self, k):
+        sum_rnk = 0.0
+        for i, cluster_number in self.r_vector.items():
+            if cluster_number == k:
+                sum_rnk += 1
+        return sum_rnk
+
+    #####################################################
+    # Initialization helper functions.
+    #####################################################
+
+    def note_all_features(self):
         for instance in self.instances:
             x_i = instance._feature_vector.feature_vector # type: dict(feature, value)
             for j in x_i.keys():
                 if j not in self.all_features:
                     self.all_features.append(j)
-        # 2. Set mu_1
-        self.set_first_mu()
-
-        # 3. Check lambda value 0
-        if self.cluster_lambda == 0:
-            self.set_default_lambda()
-
-        # 4. Initialize r_nk vector. r[ith instance] := cluster k = -1
-        for i in range(self.N):
-            self.r_vector[i] = -1
 
     def set_first_mu(self):
         first_mu = self.set_empty_prototype()
@@ -473,12 +476,21 @@ class LambdaMeans(Predictor):
         self.K += 1
 
     def set_default_lambda(self):
-        self.cluster_lambda = 0.0
-        first_mu = self.mu_vector[0]
+        if self.cluster_lambda == 0:
+            self.cluster_lambda = 0.0
+            first_mu = self.mu_vector[0]
+            for i in range(self.N):
+                x_i = self.instances[i]._feature_vector.feature_vector
+                self.cluster_lambda += self.distance(x_i, first_mu)
+            self.cluster_lambda /= float(self.N)
+
+    def set_rnk(self):
         for i in range(self.N):
-            x_i = self.instances[i]._feature_vector.feature_vector
-            self.cluster_lambda += self.distance(x_i, first_mu)
-        self.cluster_lambda /= float(self.N)
+            self.r_vector[i] = -1
+
+    #####################################################
+    # Miscellaneous helper functions.
+    #####################################################
 
     def distance(self, v1, v2):
         # Actually returns euclidian distance squared.
@@ -513,130 +525,128 @@ class NaiveBayes(Predictor):
         self.sigma_vector = {}
         self.phi_vector = {}
 
+    def initialize(self, instances):
+        self.instances = instances
+        self.N = len(self.instances)
+        self.note_all_features()
+        self.split_data()
+        self.init_mu_k()
+        self.compute_S()
+        self.init_sigma_k()
+        self.init_phi_k()
+
     def train(self, instances):
         self.initialize(instances)
         for t in range(self.T):
             self.E_step()
             self.M_step()
-        print self.K
 
     def E_step(self):
-        # Calculate the posterior of latent variables y_i given x_i, mu_k, sigma_k.
         for i in range(self.N):
-            max_k = -1
-            max_value = -float('inf')
             x_i = self.instances[i]._feature_vector.feature_vector
-            curr_k = -1
-
-            for k in self.clusters.keys():
-                if (i, x_i) in self.clusters[k]:
-                    curr_k = k
-                    break
-
-            # argmax part
-            for k in range(self.K):
-                first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
-                second_part = 0.0
-                N_k = float(len(self.clusters[k]))
-                for j in self.all_features:
-                    numerator = 0.0
-                    # second_part += log(p(x_ij | y_i = k))
-                    if x_i.has_key(j) and (i, x_i) in self.clusters[k]:
-                        numerator += 1.0
-                    if numerator == 0.0:
-                        second_part = -first_part
-                        break
-                    else:
-                        second_part += log(numerator / N_k)
-                value = first_part + second_part
-                if value > max_value:
-                    max_value = value
-                    max_k = k
-                elif value == max_value and k < max_k:
-                    max_k = k
-
-            if (i, x_i) not in self.clusters[max_k]:
-                self.clusters[curr_k].remove((i, x_i))
-                self.clusters[max_k].append((i, x_i))
+            max_k = self.argmax_k(x_i)
+            curr_k = self.find_current_cluster(i, x_i)
+            self.update_cluster_assignment(i, x_i, curr_k, max_k)
 
     def M_step(self):
         for k in range(self.K):
             N_k = float(len(self.clusters[k]))
-
-            # 1. Update phi_k
-            self.phi_vector[k] = N_k / float(self.N)
-
-            # 2. Update mu_k
-            new_mu_k = self.set_empty_prototype()
-            if N_k != 0:
-                for i, x_i in self.clusters[k]:
-                    for j, x_ij in x_i.items():
-                        new_mu_k[j] += x_ij / N_k
-            self.mu_vector[k] = new_mu_k
-
-            # 3. Update sigma_k. Use S if necessary.
-            new_sigma_k = self.set_empty_prototype()
-            if N_k > 1:
-                for i, x_i in self.clusters[k]:
-                    for j, x_ij in x_i.items():
-                        new_sigma_k[j] += (x_ij - new_mu_k[j])**2 / (N_k - 1)
-                self.sigma_vector[k] = new_sigma_k
-            else:
-                self.sigma_vector[k] = self.S
+            self.update_phi_k(k, N_k)
+            self.update_mu_k(k, N_k)
+            self.update_sigma_k(k, N_k)
 
     def predict(self, instance):
-        max_k = -1
-        max_value = -float('inf')
-        x_i = instance._feature_vector.feature_vector
+        return self.argmax_k(instance._feature_vector.feature_vector)
+
+    #####################################################
+    # E-step() helper functions.
+    #####################################################
+
+    def argmax_k(self, x_i):
+        max_k, max_value = -1, -float('inf')
         for k in range(self.K):
-            first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
-            second_part = 0.0
-            N_k = float(len(self.clusters[k]))
-            for j in self.all_features:
-                numerator = 0.0
-                if x_i.has_key(j) and self.cluster_contains_instance(self.clusters[k], x_i):
-                    numerator += 1
-                if numerator == 0:
-                    second_part = -first_part
-                    break
-                else:
-                    second_part += log(numerator / N_k)
-            value = first_part + second_part
+            value = self.evaluate_argmax_expression(k, x_i)
             if value > max_value:
                 max_value = value
                 max_k = k
-            elif value == max_value and k < max_k:
+            elif value == max_value and k < max_k: # break ties.
                 max_k = k
         return max_k
 
-    def cluster_contains_instance(self, cluster, x_i):
-        for i, item in cluster:
-            if item == x_i:
-                return True
-        return False
+    def find_current_cluster(self, i, x_i):
+        for k in self.clusters.keys():
+            if (i, x_i) in self.clusters[k]:
+                return k
+        return -1
 
-    def initialize(self, instances):
-        # 1. Init member variables.
-        self.instances = instances
-        self.N = len(self.instances)
+    def update_cluster_assignment(self, i, x_i, curr_k, max_k):
+        if (i, x_i) not in self.clusters[max_k]:
+            self.clusters[curr_k].remove((i, x_i))
+            self.clusters[max_k].append((i, x_i))
 
-        # 2. Make note of all the features that appear in all the instances
+    def evaluate_argmax_expression(self, k, x_i):
+        first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
+        second_part = 0.0
+        N_k = float(len(self.clusters[k]))
+        for j in self.all_features:
+            numerator = 0.0
+            # Expression: second_part += log(p(x_ij | y_i = k))
+            if x_i.has_key(j) and self.cluster_contains_instance(self.clusters[k], x_i):
+                numerator += 1.0
+            if numerator == 0.0:
+                second_part = -first_part
+                break
+            else:
+                second_part += log(numerator / N_k)
+        return first_part + second_part
+
+    #####################################################
+    # M-step() helper functions.
+    #####################################################
+
+    def update_phi_k(self, k, N_k):
+        self.phi_vector[k] = N_k / float(self.N)
+    
+    def update_mu_k(self, k, N_k):
+        new_mu_k = self.set_empty_prototype()
+        if N_k != 0:
+            for i, x_i in self.clusters[k]:
+                for j, x_ij in x_i.items():
+                    new_mu_k[j] += x_ij / N_k
+        self.mu_vector[k] = new_mu_k
+
+    def update_sigma_k(self, k, N_k):
+        new_sigma_k = self.set_empty_prototype()
+        if N_k > 1:
+            for i, x_i in self.clusters[k]:
+                for j, x_ij in x_i.items():
+                    new_sigma_k[j] += (x_ij - self.mu_vector[k][j])**2 / (N_k - 1)
+            self.sigma_vector[k] = new_sigma_k
+        else:
+            self.sigma_vector[k] = self.S
+
+    #####################################################
+    # Initialization helper functions.
+    #####################################################
+
+    def note_all_features(self):
         for instance in self.instances:
             x_i = instance._feature_vector.feature_vector # type: dict(feature, value)
             for j in x_i.keys():
                 if j not in self.all_features:
                     self.all_features.append(j)
 
-        # 3. Init empty clusters with empty lists.
+    def split_data(self):
+        # Init empty clusters with empty lists.
         for k in range(self.K):
             self.clusters[k] = []
 
-        # 4. Divide data into K folds.
+        # Divide data into K folds.
         for i in range(self.N):
             k = i % self.K
             self.clusters[k].append((i, self.instances[i]._feature_vector.feature_vector))
 
-        # 5. Init mu_k.
+    def init_mu_k(self):
         for k in range(self.K):
             N_k = float(len(self.clusters[k]))
             mu_k = self.set_empty_prototype()       
@@ -645,7 +655,7 @@ class NaiveBayes(Predictor):
                     mu_k[j] += x_ij / N_k
             self.mu_vector[k] = mu_k
 
-        # 6. Compute S.
+    def compute_S(self):
         mu_N = self.set_empty_prototype()
         for i in range(self.N):
             x_i = self.instances[i]._feature_vector.feature_vector
@@ -660,7 +670,7 @@ class NaiveBayes(Predictor):
         for j in self.S.keys():
             self.S[j] *= 0.01
 
-        # 7. Init sigma_k.
+    def init_sigma_k(self):
         for k in range(self.K):
             N_k = float(len(self.clusters[k]))
             mu_k = self.mu_vector[k]
@@ -673,12 +683,22 @@ class NaiveBayes(Predictor):
             else:
                 self.sigma_vector[k] = self.S
 
-        # 8. Init phi_k vector.
+    def init_phi_k(self):
         for k in range(self.K):
             self.phi_vector[k] = len(self.clusters[k]) / float(self.N)
+
+    #####################################################
+    # Miscellaneous helper functions.
+    #####################################################
 
     def set_empty_prototype(self):
         new_prototpye = {}
         for j in self.all_features:
             new_prototpye[j] = 0.0
         return new_prototpye
+
+    def cluster_contains_instance(self, cluster, x_i):
+        for i, item in cluster:
+            if item == x_i:
+                return True
+        return False
