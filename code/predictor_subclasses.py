@@ -500,7 +500,7 @@ class NaiveBayes(Predictor):
     def __init__(self, num_clusters, clustering_training_iterations):
         self.K = num_clusters
         self.T = clustering_training_iterations
-        self.instances = instances
+        self.instances = []
         self.clusters = {}
         self.all_features = []
         self.N = 0.0
