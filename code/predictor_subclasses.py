@@ -518,6 +518,7 @@ class NaiveBayes(Predictor):
         for t in range(self.T):
             self.E_step()
             self.M_step()
+        print self.K
 
     def E_step(self):
         # Calculate the posterior of latent variables y_i given x_i, mu_k, sigma_k.
