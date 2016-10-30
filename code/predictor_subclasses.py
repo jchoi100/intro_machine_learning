@@ -663,7 +663,7 @@ class NaiveBayes(Predictor):
 
         # 8. Init phi_k vector.
         for k in range(self.K):
-            phi_vector[k] = len(self.clusters[k]) / self.N
+            self.phi_vector[k] = len(self.clusters[k]) / self.N
 
     def set_empty_prototype(self):
         new_prototpye = {}
