@@ -497,7 +497,7 @@ class LambdaMeans(Predictor):
 """ HW4 """
 class NaiveBayes(Predictor):
 
-    def __int__(self, num_clusters, clustering_training_iterations):
+    def __init__(self, num_clusters, clustering_training_iterations):
         self.K = num_clusters
         self.T = clustering_training_iterations
         self.instances = instances
