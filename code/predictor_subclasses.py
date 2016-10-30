@@ -522,13 +522,11 @@ class NaiveBayes(Predictor):
             max_k = -1
             max_value = -float('inf')
             x_i = self.instances[i]._feature_vector.feature_vector
-            curr_cluster = None
             curr_k = -1
 
             for k, cluster in self.clusters.items():
                 if (i, x_i) in cluster:
                     curr_k = k
-                    curr_cluster = cluster
                     break
 
             for k in range(self.K):
@@ -552,15 +550,55 @@ class NaiveBayes(Predictor):
                 self.clusters[max_k].append((i, x_i))
 
     def M_step(self):
-        for k in range(self.K):       
+        for k in range(self.K):
+            member_instances = self.clusters[k]
+            N_k = len(member_instances) * 1.0
+
             # Update phi_k for each cluster k
-            self.phi_vector[k] = len(self.clusters[k]) / self.N
-            
+            self.phi_vector[k] = N_k / self.N
+
             # Update mu_k for each cluster k
+            new_mu_k = self.set_empty_prototype()
+            for (i, instance) in member_instances:
+                x_i = instance._feature_vector.feature_vector
+                for feature, value in x_i.items():
+                    new_mu_k[feature] += value
+            for feature in new_mu_k.keys():
+                new_mu_k[feature] /= N_k
+            self.mu_vector[k] = new_mu_k
 
             # Update sigma_k for each cluster k. Use S if necessary.
+            new_sigma_k = self.set_empty_prototype()
+            for (i, instance) in member_instances:
+                x_i = instance._feature_vector.feature_vector
+                for feature, value in x_i.items():
+                    new_sigma_k[feature] += (value - new_mu_k[feature])**2
+            if N_k > 1:
+                for feature in new_sigma_k.keys():
+                    new_sigma_k[feature] /= (N_k - 1)
+                self.sigma_vector[k] = new_sigma_k
+            else:
+                self.sigma_vector[k] = self.S
 
     def predict(self, instance):
+        max_k = -1
+        max_value = -float('inf')
+        x_i = instance._feature_vector.feature_vector
+        for k in range(self.K):
+            first_part = log(self.phi_vector[k])
+            second_part = 0.0
+            cluster_k = self.clusters[k]
+            N_k = len(cluster_k) * 1.0
+            for j in self.all_features:
+                numerator = 0.0
+                if x_i.has_key(j) and (i, x_i) in cluster_k:
+                    numerator += 1
+                second_part += log(numerator / N_k)
+            value = first_part + second_part
+            if value > max_value:
+                max_value = value
+                max_k = k
+        return max_k
 
     def initialize(self, instances):
         # 1. Init member variables.
@@ -589,7 +627,7 @@ class NaiveBayes(Predictor):
             member_instances = self.clusters[k]
             N_k = len(member_instances) * 1.0
             mu_k = self.set_empty_prototype()        
-            for (index, instance) in member_instances:
+            for (i, instance) in member_instances:
                 x_i = instance._feature_vector.feature_vector
                 for feature, value in x_i.items():
                     mu_k[feature] += value
@@ -612,7 +650,7 @@ class NaiveBayes(Predictor):
             N_k = len(member_instances) * 1.0
             mu_k = self.mu_vector[k]
             sigma_k = self.set_empty_prototype()
-            for (index, instance) in member_instances:
+            for (i, instance) in member_instances:
                 x_i = instance._feature_vector.feature_vector
                 for feature, value in x_i.items():
                     sigma_k[feature] += (value - mu_k[feature])**2
