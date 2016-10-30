@@ -4,10 +4,10 @@ lambda_means
 VI: 2.752644 | speech.dev
 VI: 1.096956 | vision.dev
 VI: 0.834740 | finance.dev
-VI: 0.634950 | bio.dev
 VI: 3.550265 | easy.dev
 VI: 0.691346 | hard.dev
 VI: 1.639153 | speech.mc.dev
+VI: 0.634950 | bio.dev
 
 ---------------------------
 
@@ -16,7 +16,9 @@ nb_clustering
 VI: 0.692947 | speech.dev
 VI: 0.690332 | vision.dev
 VI: 0.673012 | finance.dev
-VI: 0.588169 | bio.dev
 VI: 0.693147 | easy.dev
 VI: 0.691346 | hard.dev
 VI: 3.130573 | speech.mc.dev
+VI: 0.588169 | bio.dev
+
+

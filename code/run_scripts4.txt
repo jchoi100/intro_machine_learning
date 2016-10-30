@@ -10,10 +10,6 @@ python code/classify.py --mode train --algorithm lambda_means --model-file finan
 python code/classify.py --mode test --algorithm lambda_means --model-file finance.lambda_means.model --data finance.dev --predictions-file finance.dev.predictions
 python code/cluster_accuracy.py finance.dev finance.dev.predictions
 
-python code/classify.py --mode train --algorithm lambda_means --model-file bio.lambda_means.model --data bio.train
-python code/classify.py --mode test --algorithm lambda_means --model-file bio.lambda_means.model --data bio.dev --predictions-file bio.dev.predictions
-python code/cluster_accuracy.py bio.dev bio.dev.predictions
-
 python code/classify.py --mode train --algorithm lambda_means --model-file easy.lambda_means.model --data easy.train
 python code/classify.py --mode test --algorithm lambda_means --model-file easy.lambda_means.model --data easy.dev --predictions-file easy.dev.predictions
 python code/cluster_accuracy.py easy.dev easy.dev.predictions
@@ -26,7 +22,9 @@ python code/classify.py --mode train --algorithm lambda_means --model-file speec
 python code/classify.py --mode test --algorithm lambda_means --model-file speech.mc.lambda_means.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
 python code/cluster_accuracy.py speech.mc.dev speech.mc.dev.predictions
 
-
+python code/classify.py --mode train --algorithm lambda_means --model-file bio.lambda_means.model --data bio.train
+python code/classify.py --mode test --algorithm lambda_means --model-file bio.lambda_means.model --data bio.dev --predictions-file bio.dev.predictions
+python code/cluster_accuracy.py bio.dev bio.dev.predictions
 
 
 
@@ -49,10 +47,6 @@ python code/classify.py --mode train --algorithm nb_clustering --model-file fina
 python code/classify.py --mode test --algorithm nb_clustering --model-file finance.nb_clustering.model --data finance.dev --predictions-file finance.dev.predictions
 python code/cluster_accuracy.py finance.dev finance.dev.predictions
 
-python code/classify.py --mode train --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.train
-python code/classify.py --mode test --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.dev --predictions-file bio.dev.predictions
-python code/cluster_accuracy.py bio.dev bio.dev.predictions
-
 python code/classify.py --mode train --algorithm nb_clustering --model-file easy.nb_clustering.model --data easy.train
 python code/classify.py --mode test --algorithm nb_clustering --model-file easy.nb_clustering.model --data easy.dev --predictions-file easy.dev.predictions
 python code/cluster_accuracy.py easy.dev easy.dev.predictions
@@ -65,4 +59,6 @@ python code/classify.py --mode train --algorithm nb_clustering --model-file spee
 python code/classify.py --mode test --algorithm nb_clustering --model-file speech.mc.nb_clustering.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
 python code/cluster_accuracy.py speech.mc.dev speech.mc.dev.predictions
 
-
+python code/classify.py --mode train --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.dev --predictions-file bio.dev.predictions
+python code/cluster_accuracy.py bio.dev bio.dev.predictions
