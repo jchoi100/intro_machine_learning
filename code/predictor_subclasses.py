@@ -539,7 +539,11 @@ class NaiveBayes(Predictor):
                     # second_part += log(p(x_ij | y_i = k))
                     if x_i.has_key(j) and (i, x_i) in cluster_k:
                         numerator += 1
-                    second_part += log(numerator / N_k)
+                    if numerator == 0:
+                        second_part = -first_part
+                        break
+                    else:
+                        second_part += log(numerator / N_k)
                 value = first_part + second_part
                 if value > max_value:
                     max_value = value
