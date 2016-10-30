@@ -507,7 +507,7 @@ class NaiveBayes(Predictor):
         self.mu_vector = {}
         self.sigma_vector = {}
         self.S = {}
-        self.phi_vector = []
+        self.phi_vector = {}
         self.y_vector = []
 
     def train(self, instances):
