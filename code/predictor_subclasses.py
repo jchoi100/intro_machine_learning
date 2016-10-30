@@ -518,7 +518,7 @@ class NaiveBayes(Predictor):
 
     def E_step(self):
         # Calculate the posterior of laten variables y_i given x_i, mu_k, sigma_k.
-        for i in range(self.N):
+        for i in range(int(self.N)):
             max_k = -1
             max_value = -float('inf')
             x_i = self.instances[i]._feature_vector.feature_vector
@@ -604,7 +604,7 @@ class NaiveBayes(Predictor):
         # 1. Init member variables.
         self.instances = instances
         self.N = len(self.instances) * 1.0
-        self.y_vector = [-1 for i in range(self.N)]
+        self.y_vector = [-1 for i in range(int(self.N))]
 
         # 2. Make note of all the features that appear in all the instances
         for instance in self.instances:
@@ -618,7 +618,7 @@ class NaiveBayes(Predictor):
             self.clusters[k] = []
 
         # 4. Divide data into K folds.
-        for i in range(self.N):
+        for i in range(int(self.N)):
             k = i % self.K
             self.clusters[k].append((i, self.instances[i]))
 
