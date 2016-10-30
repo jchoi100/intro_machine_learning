@@ -392,13 +392,13 @@ class LambdaMeans(Predictor):
             min_distance = float('inf')
             for k in range(self.K):
                 curr_prototype = self.mu_vector[k]
-                curr_distance = self.compute_euclidian_distance(curr_prototype, curr_instance._feature_vector.feature_vector)
-                if curr_distance < min_distance and curr_distance**2 <= self.cluster_lambda:
+                curr_distance = self.distance(curr_prototype, curr_instance._feature_vector.feature_vector)
+                if curr_distance < min_distance and curr_distance <= self.cluster_lambda:
                     min_k = k
                     min_distance = curr_distance
-                elif curr_distance == min_distance and curr_distance**2 <= self.cluster_lambda and k < min_k:
+                elif curr_distance == min_distance and curr_distance <= self.cluster_lambda and k < min_k:
                     min_k = k # Tie breaking scheme.
-            if min_distance**2 > self.cluster_lambda:
+            if min_distance > self.cluster_lambda:
                 # Start a new cluster: increment K afterwards.
                 self.r_vector[i] = self.K
                 self.mu_vector[self.K] = curr_instance._feature_vector.feature_vector
@@ -408,27 +408,27 @@ class LambdaMeans(Predictor):
 
     def M_step(self):
         for k in range(self.K):
+            new_mu_k = self.set_empty_prototype()
             sum_rnk = 0.0
-            for instance_number, cluster_number in self.r_vector.items():
+            for i, cluster_number in self.r_vector.items():
                 if cluster_number == k:
                     sum_rnk += 1
-            new_mu_k = self.set_empty_prototype()
             for i in range(self.N):
                 if self.r_vector[i] == k:
                     feature_vector_to_sum = self.instances[i]._feature_vector.feature_vector
-                    for feature, value in feature_vector_to_sum.items():
-                        new_mu_k[feature] += value
+                    for j in feature_vector_to_sum.keys():
+                        new_mu_k[j] += feature_vector_to_sum[j]
             if sum_rnk == 0:
                 new_mu_k = self.set_empty_prototype()
             else:
-                for key in new_mu_k.keys():
-                    new_mu_k[key] /= sum_rnk
+                for j in new_mu_k.keys():
+                    new_mu_k[j] /= sum_rnk
             self.mu_vector[k] = new_mu_k
 
     def set_empty_prototype(self):
         new_prototpye = {}
-        for feature in self.all_features:
-            new_prototpye[feature] = 0.0
+        for j in self.all_features:
+            new_prototpye[j] = 0.0
         return new_prototpye
 
     def predict(self, instance):
@@ -439,7 +439,7 @@ class LambdaMeans(Predictor):
         min_distance = float('inf')
         for k in range(self.K):
             curr_prototype = self.mu_vector[k]
-            curr_distance = self.compute_euclidian_distance(curr_prototype, instance._feature_vector.feature_vector)
+            curr_distance = self.distance(curr_prototype, instance._feature_vector.feature_vector)
             if curr_distance < min_distance:
                 min_k = k
                 min_distance = curr_distance
@@ -470,28 +470,28 @@ class LambdaMeans(Predictor):
         first_mu = self.set_empty_prototype()
         for instance in self.instances:
             x_i = instance._feature_vector.feature_vector
-            for feature, value in x_i.items():
-                first_mu[feature] += value
-        for feature in first_mu.keys():
-            first_mu[feature] /= (self.N * 1.0)
+            for j in x_i.keys():
+                first_mu[j] += x_i[j]
+        for j in first_mu.keys():
+            first_mu[j] /= (self.N * 1.0)
         self.mu_vector[0] = first_mu
         self.K += 1
 
     def set_default_lambda(self):
         self.cluster_lambda = 0.0
         first_mu = self.mu_vector[0]
-        for instance in self.instances:
-            x_i = instance._feature_vector.feature_vector
-            self.cluster_lambda += self.compute_euclidian_distance(x_i, first_mu)**2
+        for i in range(self.N):
+            x_i = self.instances[i]._feature_vector.feature_vector
+            self.cluster_lambda += self.distance(x_i, first_mu)
         self.cluster_lambda /= (self.N * 1.0)
 
-    def compute_euclidian_distance(self, v1, v2):
+    def distance(self, v1, v2):
         dist = 0.0
-        for feature in self.all_features:
-            v1_value = v1[feature] if v1.has_key(feature) else 0.0
-            v2_value = v2[feature] if v2.has_key(feature) else 0.0
+        for j in self.all_features:
+            v1_value = v1[j] if v1.has_key(j) else 0.0
+            v2_value = v2[j] if v2.has_key(j) else 0.0
             dist += (v1_value - v2_value)**2
-        return sqrt(dist)
+        return dist
 
        
 """ HW4 """
@@ -521,23 +521,23 @@ class NaiveBayes(Predictor):
         for i in range(int(self.N)):
             max_k = -1
             max_value = -float('inf')
-            x_i = self.instances[i]._feature_vector.feature_vector
+            x_i = self.instances[i]
             curr_k = -1
 
-            for k, cluster in self.clusters.items():
+            for (k, cluster) in self.clusters.items():
                 if (i, x_i) in cluster:
                     curr_k = k
                     break
 
             for k in range(self.K):
-                first_part = log(self.phi_vector[k])
+                first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
                 second_part = 0.0
                 cluster_k = self.clusters[k]
                 N_k = len(cluster_k) * 1.0
                 for j in self.all_features:
                     numerator = 0.0
                     # second_part += log(p(x_ij | y_i = k))
-                    if x_i.has_key(j) and (i, x_i) in cluster_k:
+                    if x_i._feature_vector.feature_vector.has_key(j) and (i, x_i) in cluster_k:
                         numerator += 1
                     if numerator == 0:
                         second_part = -first_part
@@ -547,6 +547,8 @@ class NaiveBayes(Predictor):
                 value = first_part + second_part
                 if value > max_value:
                     max_value = value
+                    max_k = k
+                elif value == max_value and k < max_k:
                     max_k = k
 
             if (i, x_i) not in self.clusters[max_k]:
@@ -563,12 +565,13 @@ class NaiveBayes(Predictor):
 
             # Update mu_k for each cluster k
             new_mu_k = self.set_empty_prototype()
-            for (i, instance) in member_instances:
-                x_i = instance._feature_vector.feature_vector
-                for feature, value in x_i.items():
-                    new_mu_k[feature] += value
-            for feature in new_mu_k.keys():
-                new_mu_k[feature] /= N_k
+            if N_k != 0:
+                for (i, instance) in member_instances:
+                    x_i = instance._feature_vector.feature_vector
+                    for feature, value in x_i.items():
+                        new_mu_k[feature] += value
+                for feature in new_mu_k.keys():
+                    new_mu_k[feature] /= N_k
             self.mu_vector[k] = new_mu_k
 
             # Update sigma_k for each cluster k. Use S if necessary.
@@ -589,15 +592,23 @@ class NaiveBayes(Predictor):
         max_value = -float('inf')
         x_i = instance._feature_vector.feature_vector
         for k in range(self.K):
-            first_part = log(self.phi_vector[k])
+            first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
             second_part = 0.0
             cluster_k = self.clusters[k]
             N_k = len(cluster_k) * 1.0
             for j in self.all_features:
                 numerator = 0.0
-                if x_i.has_key(j) and (i, x_i) in cluster_k:
+                flag = False
+                for (i, item) in cluster_k:
+                    if item == x_i:
+                        flag = True
+                if x_i.has_key(j) and flag:
                     numerator += 1
-                second_part += log(numerator / N_k)
+                if numerator == 0:
+                    second_part = -first_part
+                    break
+                else:
+                    second_part += log(numerator / N_k)
             value = first_part + second_part
             if value > max_value:
                 max_value = value

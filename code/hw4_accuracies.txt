@@ -13,10 +13,10 @@ VI: 1.639153 | speech.mc.dev
 
 nb_clustering
 
-VI:  | speech.dev
-VI:  | vision.dev
-VI:  | finance.dev
-VI:  | bio.dev
-VI:  | easy.dev
-VI:  | hard.dev
-VI:  | speech.mc.dev
+VI: 0.692947 | speech.dev
+VI: 0.690332 | vision.dev
+VI: 0.673012 | finance.dev
+VI: 0.588169 | bio.dev
+VI: 0.693147 | easy.dev
+VI: 0.691346 | hard.dev
+VI: 3.130573 | speech.mc.dev
