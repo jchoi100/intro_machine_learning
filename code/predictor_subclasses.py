@@ -1,5 +1,5 @@
 from cs475_types import Predictor, ClassificationLabel
-from math import sqrt, log, exp
+from math import sqrt, log, exp, pi
 
 """ HW1 """
 class Perceptron(Predictor):
@@ -451,7 +451,7 @@ class LambdaMeans(Predictor):
         for i, cluster_number in self.r_vector.items():
             if cluster_number == k:
                 sum_rnk += 1
-        return sum_rnk
+        return float(sum_rnk)
 
     #####################################################
     # Initialization helper functions.
@@ -567,15 +567,14 @@ class NaiveBayes(Predictor):
         for k in range(self.K):
             value = self.evaluate_argmax_expression(k, x_i)
             if value > max_value:
-                max_value = value
-                max_k = k
+                max_value, max_k = value, k
             elif value == max_value and k < max_k: # break ties.
                 max_k = k
         return max_k
 
     def find_current_cluster(self, i, x_i):
-        for k in self.clusters.keys():
-            if (i, x_i) in self.clusters[k]:
+        for k, cluster_k in self.clusters.items():
+            if (i, x_i) in cluster_k:
                 return k
         return -1
 
@@ -587,25 +586,28 @@ class NaiveBayes(Predictor):
     def evaluate_argmax_expression(self, k, x_i):
         first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
         second_part = 0.0
-        N_k = float(len(self.clusters[k]))
+        mu_k, sigma_k = self.mu_vector[k], self.sigma_vector[k]
         for j in self.all_features:
-            numerator = 0.0
-            # Expression: second_part += log(p(x_ij | y_i = k))
-            if x_i.has_key(j) and self.cluster_contains_instance(self.clusters[k], x_i):
-                numerator += 1.0
-            if numerator == 0.0:
+            x_ij = x_i[j] if x_i.has_key(j) else 0.0
+            p = self.compute_normal(x_ij, mu_k[j], sigma_k[j])
+            if p == 0.0:
                 second_part = -first_part
                 break
             else:
-                second_part += log(numerator / N_k)
+                second_part += log(p)
         return first_part + second_part
+
+    def compute_normal(self, x_ij, mu_kj, sigma_kj):
+        if sigma_kj == 0:
+            return 1.0 if x_ij >= mu_kj else 0.0
+        return (1.0 / sqrt(2 * pi * sigma_kj)) * exp(-((x_ij - mu_kj)**2) / (2 * sigma_kj))
 
     #####################################################
     # M-step() helper functions.
     #####################################################
 
     def update_phi_k(self, k, N_k):
-        self.phi_vector[k] = N_k / float(self.N)
+        self.phi_vector[k] = (N_k + 1) / float(self.N + self.K)
     
     def update_mu_k(self, k, N_k):
         new_mu_k = self.set_empty_prototype()
@@ -616,11 +618,11 @@ class NaiveBayes(Predictor):
         self.mu_vector[k] = new_mu_k
 
     def update_sigma_k(self, k, N_k):
-        new_sigma_k = self.set_empty_prototype()
+        mu_k, new_sigma_k = self.mu_vector[k], self.set_empty_prototype()
         if N_k > 1:
             for i, x_i in self.clusters[k]:
                 for j, x_ij in x_i.items():
-                    new_sigma_k[j] += (x_ij - self.mu_vector[k][j])**2 / (N_k - 1)
+                    new_sigma_k[j] += (x_ij - mu_k[j])**2 / (N_k - 1)
             self.sigma_vector[k] = new_sigma_k
         else:
             self.sigma_vector[k] = self.S
@@ -631,7 +633,7 @@ class NaiveBayes(Predictor):
 
     def note_all_features(self):
         for instance in self.instances:
-            x_i = instance._feature_vector.feature_vector # type: dict(feature, value)
+            x_i = instance._feature_vector.feature_vector
             for j in x_i.keys():
                 if j not in self.all_features:
                     self.all_features.append(j)
@@ -643,8 +645,7 @@ class NaiveBayes(Predictor):
 
         # Divide data into K folds.
         for i in range(self.N):
-            k = i % self.K
-            self.clusters[k].append((i, self.instances[i]._feature_vector.feature_vector))
+            self.clusters[i % self.K].append((i, self.instances[i]._feature_vector.feature_vector))
 
     def init_mu_k(self):
         for k in range(self.K):
@@ -666,15 +667,12 @@ class NaiveBayes(Predictor):
         for i in range(self.N):
             x_i = self.instances[i]._feature_vector.feature_vector
             for j, x_ij in x_i.items():
-                self.S[j] += (x_ij - mu_N[j])**2 / (float(self.N) - 1)
-        for j in self.S.keys():
-            self.S[j] *= 0.01
+                self.S[j] += 0.01 * (x_ij - mu_N[j])**2 / float(self.N - 1)
 
     def init_sigma_k(self):
         for k in range(self.K):
             N_k = float(len(self.clusters[k]))
-            mu_k = self.mu_vector[k]
-            sigma_k = self.set_empty_prototype()
+            mu_k, sigma_k = self.mu_vector[k], self.set_empty_prototype()
             if N_k > 1:
                 for i, x_i in self.clusters[k]:
                     for j, x_ij in x_i.items():
@@ -685,7 +683,7 @@ class NaiveBayes(Predictor):
 
     def init_phi_k(self):
         for k in range(self.K):
-            self.phi_vector[k] = len(self.clusters[k]) / float(self.N)
+            self.phi_vector[k] = (len(self.clusters[k]) + 1) / float(self.N + self.K)
 
     #####################################################
     # Miscellaneous helper functions.
@@ -696,9 +694,3 @@ class NaiveBayes(Predictor):
         for j in self.all_features:
             new_prototpye[j] = 0.0
         return new_prototpye
-
-    def cluster_contains_instance(self, cluster, x_i):
-        for i, item in cluster:
-            if item == x_i:
-                return True
-        return False
