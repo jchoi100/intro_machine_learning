@@ -72,10 +72,11 @@ python code/cluster_accuracy.py speech.mc.dev speech.mc.dev.predictions
 
 
 
-
-python code/number_clusters.py speech.dev.predictions
-python code/number_clusters.py vision.dev.predictions
-python code/number_clusters.py finance.dev.predictions
 python code/number_clusters.py easy.dev.predictions
 python code/number_clusters.py hard.dev.predictions
+python code/number_clusters.py bio.dev.predictions
+python code/number_clusters.py speech.dev.predictions
+python code/number_clusters.py finance.dev.predictions
+python code/number_clusters.py vision.dev.predictions
 python code/number_clusters.py speech.mc.dev.predictions
+
