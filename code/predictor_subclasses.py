@@ -214,8 +214,10 @@ class KNN(Predictor):
     def compute_distance(self, known_instance_features, test_instance_features):
         distance = 0
         for feature in self.all_features:
-            known_instance_value = known_instance_features[feature] if known_instance_features.has_key(feature) else 0
-            test_instance_value = test_instance_features[feature] if test_instance_features.has_key(feature) else 0
+            known_instance_value = known_instance_features[feature] \
+                    if known_instance_features.has_key(feature) else 0
+            test_instance_value = test_instance_features[feature] \
+                    if test_instance_features.has_key(feature) else 0
             distance += (known_instance_value - test_instance_value)**2
         return sqrt(distance)
 

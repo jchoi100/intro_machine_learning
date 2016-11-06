@@ -46,3 +46,12 @@ speech | VI: 2.752644 | 30 unique labels | 6.7850(s)
 finance | VI: 0.834740 | 3 unique labels | 2.7744(s)
 vision | VI: 1.096956 | 5 unique labels | 2.6062(s)
 speech.mc | VI: 1.639153 | 21 unique labels | 8.5116 (s)
+
+
+easy | VI: 0.936028 | 3 unique labels | 2.2469(s)
+hard | VI: 1.734317 | 3 unique labels | 16.7713(s)
+bio | VI: 1.052151 | 3 unique labels | 100.5390(s)
+speech | VI: 1.246083 | 3 unique labels | 45.3598(s)
+finance | VI: 1.244223 | 3 unique labels | 4.9802(s)
+vision | VI: 0.291415 | 3 unique labels | 2.1700(s)
+speech.mc | VI: 2.290598 | 3 unique labels | 24.9394(s)
