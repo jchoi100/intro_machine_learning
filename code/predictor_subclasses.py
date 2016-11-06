@@ -587,6 +587,8 @@ class NaiveBayes(Predictor):
 
     def evaluate_argmax_expression(self, k, x_i):
         first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
+        if first_part == 0:
+            return 0.0
         second_part = 0.0
         mu_k, sigma_k = self.mu_vector[k], self.sigma_vector[k]
         for j in self.all_features:
