@@ -11,45 +11,33 @@ VI: 0.634950 | bio.dev
 
 Eric Bridgeford:
 
-datasets | variation of info | number of clusters | duration
-easy | VI: 3.550265 | 35 unique labels | 3.6618(s)
-hard | VI: 0.691346 | 1 unique labels | 19.7769(s)
-bio | VI: 0.634950 | 3 unique labels | 150.0815(s)
-speech | VI: 2.752644 | 30 unique labels | 6.7850(s)
-finance | VI: 0.834740 | 3 unique labels | 2.7744(s)
-vision | VI: 1.096956 | 5 unique labels | 2.6062(s)
-speech.mc | VI: 1.639153 | 21 unique labels | 8.5116 (s)
+easy | VI: 3.550265 | 35 unique labels | 
+hard | VI: 0.691346 | 1 unique labels | 
+bio | VI: 0.634950 | 3 unique labels |
+speech | VI: 2.752644 | 30 unique labels | 
+finance | VI: 0.834740 | 3 unique labels | 
+vision | VI: 1.096956 | 5 unique labels |
+speech.mc | VI: 1.639153 | 21 unique labels | 
 
 ---------------------------
 
 nb_clustering
 
-VI: 0.692947 | speech.dev
-VI: 0.690332 | vision.dev
-VI: 0.673012 | finance.dev
-VI: 0.693147 | easy.dev
-VI: 0.691346 | hard.dev
-VI: 3.130573 | speech.mc.dev
-VI: 0.588169 | bio.dev
-
-
-
-
-easy | VI: 0.693147 | 1 unique labels | 
-hard | VI: 1.734317 | 3 unique labels |
-bio | VI: 0.667192 | 3 unique labels | 
-speech | VI: 1.140898 | 2 unique labels |
-finance | VI: 0.673012 | 1 unique labels | 
-vision | VI: 0.561183 | 3 unique labels | 
-speech.mc | VI: 3.072431 | 2 unique labels | 
+o easy | VI: 0.936028 | 3 unique labels | 
+x hard | VI: 1.776988 | 3 unique labels |
+x bio | VI: 1.061647 | 3 unique labels | 
+o speech | VI: 1.246083 | 3 unique labels |
+x finance | VI: 1.209310 | 3 unique labels | 
+x vision | VI: 0.632086 | 3 unique labels | 
+x speech.mc | VI: 2.354170 | 3 unique labels | 
 
 
 Eric Bridgeford:
 
-easy | VI: 0.936028 | 3 unique labels | 2.2469(s)
-hard | VI: 1.734317 | 3 unique labels | 16.7713(s)
-bio | VI: 1.052151 | 3 unique labels | 100.5390(s)
-speech | VI: 1.246083 | 3 unique labels | 45.3598(s)
-finance | VI: 1.244223 | 3 unique labels | 4.9802(s)
-vision | VI: 0.291415 | 3 unique labels | 2.1700(s)
-speech.mc | VI: 2.290598 | 3 unique labels | 24.9394(s)
+easy | VI: 0.936028 | 3 unique labels | 
+hard | VI: 1.734317 | 3 unique labels | 
+bio | VI: 1.052151 | 3 unique labels | 
+speech | VI: 1.246083 | 3 unique labels | 
+finance | VI: 1.244223 | 3 unique labels | 
+vision | VI: 0.291415 | 3 unique labels | 
+speech.mc | VI: 2.290598 | 3 unique labels | 

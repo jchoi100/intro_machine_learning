@@ -539,9 +539,13 @@ class NaiveBayes(Predictor):
 
     def train(self, instances):
         self.initialize(instances)
+        # print("Sj: " + str(self.S))
+        # self.print_cluster_details(-1)
         for t in range(self.T):
             self.E_step()
             self.M_step()
+            # print("\nAfter M-step: ")
+        # self.print_cluster_details(t)
 
     def E_step(self):
         for i in range(self.N):
@@ -582,29 +586,40 @@ class NaiveBayes(Predictor):
 
     def update_cluster_assignment(self, i, x_i, curr_k, max_k):
         if (i, x_i) not in self.clusters[max_k]:
+            # print("===========================")
+            # print((i, x_i))
+            # print("-   -   -   -   -   -   - ")
+            # print(self.clusters[curr_k])
+            # print(self.clusters[max_k])
             self.clusters[curr_k].remove((i, x_i))
+            # print("-   -   -   -   -   -   - ")            
             self.clusters[max_k].append((i, x_i))
+            # print(self.clusters[curr_k])
+            # print(self.clusters[max_k])
+            # print("===========================")
+            # print("")
 
     def evaluate_argmax_expression(self, k, x_i):
-        first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else 0.0
+        first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else -float('inf')
         if first_part == 0:
             return 0.0
         second_part = 0.0
         mu_k, sigma_k = self.mu_vector[k], self.sigma_vector[k]
         for j in self.all_features:
             x_ij = x_i[j] if x_i.has_key(j) else 0.0
-            p = self.compute_normal(x_ij, mu_k[j], sigma_k[j])
-            if p == 0.0:
-                second_part = -first_part
-                break
-            else:
-                second_part += log(p)
+            logp = self.compute_normal(x_ij, mu_k[j], sigma_k[j])
+            second_part += logp
+            # if p == 0.0:
+            #     return 0.0
+            # else:
+            #     second_part += log(p)
         return first_part + second_part
 
     def compute_normal(self, x_ij, mu_kj, sigma_kj):
-        if sigma_kj == 0:
-            return 1.0 if x_ij >= mu_kj else 0.0
-        return (1.0 / sqrt(2 * pi * sigma_kj)) * exp(-((x_ij - mu_kj)**2) / (2 * sigma_kj))
+        return log(1 / sqrt(2 * pi * sigma_kj)) - ((x_ij - mu_kj)**2) / (2 * sigma_kj)
+        # if sigma_kj == 0:
+        #     return 1.0 if x_ij >= mu_kj else 0.0
+        # return (1.0 / sqrt(2 * pi * sigma_kj)) * exp(-((x_ij - mu_kj)**2) / (2 * sigma_kj))
 
     #####################################################
     # M-step() helper functions.
@@ -617,7 +632,8 @@ class NaiveBayes(Predictor):
         new_mu_k = self.set_empty_prototype()
         if N_k != 0:
             for i, x_i in self.clusters[k]:
-                for j, x_ij in x_i.items():
+                for j in self.all_features:
+                    x_ij = x_i[j] if x_i.has_key(j) else 0.0
                     new_mu_k[j] += x_ij / N_k
         self.mu_vector[k] = new_mu_k
 
@@ -625,8 +641,12 @@ class NaiveBayes(Predictor):
         mu_k, new_sigma_k = self.mu_vector[k], self.set_empty_prototype()
         if N_k > 1:
             for i, x_i in self.clusters[k]:
-                for j, x_ij in x_i.items():
+                for j in self.all_features:
+                    x_ij = x_i[j] if x_i.has_key(j) else 0.0
                     new_sigma_k[j] += (x_ij - mu_k[j])**2 / (N_k - 1)
+                for j in self.all_features:
+                    if new_sigma_k[j] == 0 or new_sigma_k[j] < self.S[j]:
+                        new_sigma_k[j] = self.S[j]
             self.sigma_vector[k] = new_sigma_k
         else:
             self.sigma_vector[k] = self.S
@@ -649,7 +669,7 @@ class NaiveBayes(Predictor):
 
         # Divide data into K folds.
         for i in range(self.N):
-            self.clusters[i % self.K].append((i, self.instances[i]._feature_vector.feature_vector))
+            self.clusters[(i + 1) % self.K].append((i, self.instances[i]._feature_vector.feature_vector))
 
     def init_mu_k(self):
         for k in range(self.K):
@@ -670,17 +690,24 @@ class NaiveBayes(Predictor):
         self.S = self.set_empty_prototype()
         for i in range(self.N):
             x_i = self.instances[i]._feature_vector.feature_vector
-            for j, x_ij in x_i.items():
-                self.S[j] += 0.01 * (x_ij - mu_N[j])**2 / float(self.N - 1)
+            for j in self.all_features:
+                x_ij = x_i[j] if x_i.has_key(j) else 0.0
+                self.S[j] += (0.01 * (x_ij - mu_N[j])**2 / float(self.N - 1))
 
     def init_sigma_k(self):
         for k in range(self.K):
+            # print("==========================")
+            # print(self.clusters[k])
             N_k = float(len(self.clusters[k]))
             mu_k, sigma_k = self.mu_vector[k], self.set_empty_prototype()
             if N_k > 1:
                 for i, x_i in self.clusters[k]:
-                    for j, x_ij in x_i.items():
+                    for j in self.all_features:
+                        x_ij = x_i[j] if x_i.has_key(j) else 0.0
                         sigma_k[j] += (x_ij - mu_k[j])**2 / (N_k - 1)
+                    for j in self.all_features:
+                        if sigma_k[j] == 0 or sigma_k[j] < self.S[j]:
+                            sigma_k[j] = self.S[j]
                 self.sigma_vector[k] = sigma_k
             else:
                 self.sigma_vector[k] = self.S
@@ -698,3 +725,16 @@ class NaiveBayes(Predictor):
         for j in self.all_features:
             new_prototpye[j] = 0.0
         return new_prototpye
+
+    def print_cluster_details(self, t):
+        print("============== t = " + str(t) + " ==============")
+        print("")
+        for key, value in self.clusters.items():
+            print("------------- Cluster " + str(key) + " -------------")
+            print("means: " + str(self.mu_vector[key]))
+            print("variances: " + str(self.sigma_vector[key]))
+            print("probability: " + str(self.phi_vector[key]))
+            print("")
+            # print("cluster: " + str(self.clusters[key]))
+        print("")
+        # print("")

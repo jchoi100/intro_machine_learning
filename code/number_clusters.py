@@ -24,7 +24,7 @@ for l in predicted_labels:
 	labels[l] += 1
 
 print 'Label distribution: ' + str(sys.argv[1])
-for l in labels:
-	print 'Label %s: %d' % (l, labels[l])
+# for l in labels:
+# 	print 'Label %s: %d' % (l, labels[l])
 print '%d unique labels' % len(labels)
 
