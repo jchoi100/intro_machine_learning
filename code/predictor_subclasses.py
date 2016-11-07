@@ -539,12 +539,9 @@ class NaiveBayes(Predictor):
 
     def train(self, instances):
         self.initialize(instances)
-        # print("Sj: " + str(self.S))
-        # self.print_cluster_details(-1)
         for t in range(self.T):
             self.E_step()
             self.M_step()
-            # self.print_cluster_details(t)
 
     def E_step(self):
         for i in range(self.N):
