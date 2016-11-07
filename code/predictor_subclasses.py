@@ -667,7 +667,6 @@ class NaiveBayes(Predictor):
             x_i = self.instances[i]._feature_vector.feature_vector
             for j, x_ij in x_i.items():
                 mu_N[j] += x_ij / float(self.N)
-        # print(mu_N[3])
         self.S = self.set_empty_prototype()
         for i in range(self.N):
             x_i = self.instances[i]._feature_vector.feature_vector
@@ -677,8 +676,6 @@ class NaiveBayes(Predictor):
         for j in self.all_features:
             if self.S[j] < 0.00000001:
                 self.S[j] = 3
-        # print(self.S[3])
-        # print(self.S[3] == 0)
 
     def init_sigma_k(self):
         for k in range(self.K):
@@ -689,9 +686,9 @@ class NaiveBayes(Predictor):
                     for j in self.all_features:
                         x_ij = x_i.get(j, 0.0)
                         sigma_k[j] += (x_ij - mu_k[j])**2 / (N_k - 1)
-                    for j in self.all_features:
-                        if sigma_k[j] == 0 or sigma_k[j] < self.S[j]:
-                            sigma_k[j] = self.S[j]
+                for j in self.all_features:
+                    if sigma_k[j] == 0 or sigma_k[j] < self.S[j]:
+                        sigma_k[j] = self.S[j]
                 self.sigma_vector[k] = sigma_k
             else:
                 self.sigma_vector[k] = self.S
@@ -709,13 +706,3 @@ class NaiveBayes(Predictor):
         for j in self.all_features:
             new_prototpye[j] = 0.0
         return new_prototpye
-
-    def print_cluster_details(self, t):
-        print("\n============== t = " + str(t + 1) + " ==============\n")
-        for key, value in self.clusters.items():
-            print("------------- Cluster " + str(key) + " -------------")
-            print("size: " + str(len(self.clusters[key])))
-            print("means: " + str(self.mu_vector[key]))
-            print("variances: " + str(self.sigma_vector[key]))
-            # print("probability: " + str(self.phi_vector[key]))
-            # print("cluster: " + str(self.clusters[key]))
