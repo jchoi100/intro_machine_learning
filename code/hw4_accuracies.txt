@@ -24,12 +24,12 @@ speech.mc | VI: 1.639153 | 21 unique labels |
 nb_clustering
 
 o easy | VI: 0.936028 | 3 unique labels | 
-x hard | VI: 1.780683 | 3 unique labels |
-x bio | VI: 1.061647 | 3 unique labels | 
-o speech | VI: 1.246083 | 3 unique labels |
-x finance | VI: 1.209310 | 3 unique labels | 
-x vision | VI: 0.632086 | 3 unique labels | 
-x speech.mc | VI: 2.354170 | 3 unique labels | 
+x hard | VI: 1.780683 | 3 unique labels | 2.594 %
+x bio | VI: 1.061647 | 3 unique labels | 0.894 %
+o speech | VI: 1.246083 | 3 unique labels | 
+x finance | VI: 1.209310 | 3 unique labels | 2.887 % 
+o vision | VI: 0.291415 | 3 unique labels |
+x speech.mc | VI: 2.354170 | 3 unique labels | 2.700 %
 
 
 Eric Bridgeford:
