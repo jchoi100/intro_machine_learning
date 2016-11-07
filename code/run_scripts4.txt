@@ -84,6 +84,6 @@ python code/number_clusters.py speech.mc.dev.predictions
 
 
 
-python code/classify.py --mode train --algorithm nb_clustering --clustering-training-iterations 3 --model-file small_clusters.nb_clustering.model --data small_clusters.train
+python code/classify.py --mode train --algorithm nb_clustering --clustering-training-iterations 10 --model-file small_clusters.nb_clustering.model --data small_clusters.train
 
 

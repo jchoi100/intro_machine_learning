@@ -545,7 +545,7 @@ class NaiveBayes(Predictor):
             self.E_step()
             self.M_step()
             # print("\nAfter M-step: ")
-        # self.print_cluster_details(t)
+            # self.print_cluster_details(9)
 
     def E_step(self):
         for i in range(self.N):
@@ -600,9 +600,10 @@ class NaiveBayes(Predictor):
             # print("")
 
     def evaluate_argmax_expression(self, k, x_i):
-        first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else -float('inf')
-        if first_part == 0:
-            return 0.0
+        first_part = log(self.phi_vector[k])
+        # first_part = log(self.phi_vector[k]) if self.phi_vector[k] != 0 else -float('inf')
+        # if first_part == 0:
+        #     return 0.0
         second_part = 0.0
         mu_k, sigma_k = self.mu_vector[k], self.sigma_vector[k]
         for j in self.all_features:
@@ -644,10 +645,15 @@ class NaiveBayes(Predictor):
                 for j in self.all_features:
                     x_ij = x_i[j] if x_i.has_key(j) else 0.0
                     new_sigma_k[j] += (x_ij - mu_k[j])**2 / (N_k - 1)
-                for j in self.all_features:
-                    if new_sigma_k[j] == 0 or new_sigma_k[j] < self.S[j]:
-                        new_sigma_k[j] = self.S[j]
+                    # print("[" + str(x_ij) + " - " + str(mu_k[j]) + "]^2")
+            for j in self.all_features:
+                if new_sigma_k[j] == 0 or new_sigma_k[j] < self.S[j]:
+                    new_sigma_k[j] = self.S[j]
+                    # print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!")
             self.sigma_vector[k] = new_sigma_k
+            # print(N_k)
+            # print(new_sigma_k)
+            # print(self.clusters[2])
         else:
             self.sigma_vector[k] = self.S
 
@@ -669,7 +675,7 @@ class NaiveBayes(Predictor):
 
         # Divide data into K folds.
         for i in range(self.N):
-            self.clusters[(i + 1) % self.K].append((i, self.instances[i]._feature_vector.feature_vector))
+            self.clusters[(i) % self.K].append((i, self.instances[i]._feature_vector.feature_vector))
 
     def init_mu_k(self):
         for k in range(self.K):
@@ -731,10 +737,11 @@ class NaiveBayes(Predictor):
         print("")
         for key, value in self.clusters.items():
             print("------------- Cluster " + str(key) + " -------------")
+            print("size: " + str(len(self.clusters[key])))
             print("means: " + str(self.mu_vector[key]))
             print("variances: " + str(self.sigma_vector[key]))
             print("probability: " + str(self.phi_vector[key]))
-            print("")
+            # print("")
             # print("cluster: " + str(self.clusters[key]))
         print("")
         # print("")
