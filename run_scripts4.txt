@@ -1,0 +1,89 @@
+python code/classify.py --mode train --algorithm lambda_means --model-file easy.lambda_means.model --data easy.train
+python code/classify.py --mode test --algorithm lambda_means --model-file easy.lambda_means.model --data easy.dev --predictions-file easy.dev.predictions
+python code/cluster_accuracy.py easy.dev easy.dev.predictions
+python code/number_clusters.py easy.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file hard.lambda_means.model --data hard.train
+python code/classify.py --mode test --algorithm lambda_means --model-file hard.lambda_means.model --data hard.dev --predictions-file hard.dev.predictions
+python code/cluster_accuracy.py hard.dev hard.dev.predictions
+python code/number_clusters.py hard.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file bio.lambda_means.model --data bio.train
+python code/classify.py --mode test --algorithm lambda_means --model-file bio.lambda_means.model --data bio.dev --predictions-file bio.dev.predictions
+python code/cluster_accuracy.py bio.dev bio.dev.predictions
+python code/number_clusters.py bio.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file speech.lambda_means.model --data speech.train
+python code/classify.py --mode test --algorithm lambda_means --model-file speech.lambda_means.model --data speech.dev --predictions-file speech.dev.predictions
+python code/cluster_accuracy.py speech.dev speech.dev.predictions
+python code/number_clusters.py speech.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file finance.lambda_means.model --data finance.train
+python code/classify.py --mode test --algorithm lambda_means --model-file finance.lambda_means.model --data finance.dev --predictions-file finance.dev.predictions
+python code/cluster_accuracy.py finance.dev finance.dev.predictions
+python code/number_clusters.py finance.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file vision.lambda_means.model --data vision.train
+python code/classify.py --mode test --algorithm lambda_means --model-file vision.lambda_means.model --data vision.dev --predictions-file vision.dev.predictions
+python code/cluster_accuracy.py vision.dev vision.dev.predictions
+python code/number_clusters.py vision.dev.predictions
+
+python code/classify.py --mode train --algorithm lambda_means --model-file speech.mc.lambda_means.model --data speech.mc.train
+python code/classify.py --mode test --algorithm lambda_means --model-file speech.mc.lambda_means.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
+python code/cluster_accuracy.py speech.mc.dev speech.mc.dev.predictions
+python code/number_clusters.py speech.mc.dev.predictions
+
+
+
+
+
+
+python code/classify.py --mode train --algorithm lambda_means --model-file small_clusters.lambda_means.model --data small_clusters.train
+python code/classify.py --mode test --algorithm lambda_means --model-file small_clusters.lambda_means.model --data small_clusters.dev --predictions-file small_clusters.dev.predictions
+python code/cluster_accuracy.py small_clusters.train small_clusters.dev.predictions
+
+
+
+
+
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file easy.nb_clustering.model --data easy.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file easy.nb_clustering.model --data easy.dev --predictions-file easy.dev.predictions
+python code/cluster_accuracy.py easy.dev easy.dev.predictions
+python code/number_clusters.py easy.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file hard.nb_clustering.model --data hard.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file hard.nb_clustering.model --data hard.dev --predictions-file hard.dev.predictions
+python code/cluster_accuracy.py hard.dev hard.dev.predictions
+python code/number_clusters.py hard.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file bio.nb_clustering.model --data bio.dev --predictions-file bio.dev.predictions
+python code/cluster_accuracy.py bio.dev bio.dev.predictions
+python code/number_clusters.py bio.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file speech.nb_clustering.model --data speech.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file speech.nb_clustering.model --data speech.dev --predictions-file speech.dev.predictions
+python code/cluster_accuracy.py speech.dev speech.dev.predictions
+python code/number_clusters.py speech.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file finance.nb_clustering.model --data finance.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file finance.nb_clustering.model --data finance.dev --predictions-file finance.dev.predictions
+python code/cluster_accuracy.py finance.dev finance.dev.predictions
+python code/number_clusters.py finance.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file vision.nb_clustering.model --data vision.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file vision.nb_clustering.model --data vision.dev --predictions-file vision.dev.predictions
+python code/cluster_accuracy.py vision.dev vision.dev.predictions
+python code/number_clusters.py vision.dev.predictions
+
+python code/classify.py --mode train --algorithm nb_clustering --model-file speech.mc.nb_clustering.model --data speech.mc.train
+python code/classify.py --mode test --algorithm nb_clustering --model-file speech.mc.nb_clustering.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
+python code/cluster_accuracy.py speech.mc.dev speech.mc.dev.predictions
+python code/number_clusters.py speech.mc.dev.predictions
+
+
+
+python code/classify.py --mode train --algorithm nb_clustering --clustering-training-iterations 10 --model-file small_clusters.nb_clustering.model --data small_clusters.train
+
+
