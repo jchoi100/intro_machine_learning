@@ -1,4 +1,4 @@
-
+import numpy as np
 
 class ChainMRFPotentials:
     def __init__(self, data_file):
@@ -103,25 +103,60 @@ class ChainMRFPotentials:
 class SumProduct:
     def __init__(self, p):
         self._potentials = p
-        # TODO: EDIT HERE
+        self.n = p.chain_length()
+        self.k = p.num_x_values()
+        self.front_messages = []
+        self.back_messages = []
+        self.front_pass()
+        self.back_pass()
+        self.back_messages = list(reversed(self.back_messages))
 
-        # Do the front pass and back pass here.
+    def front_pass(self):
+        prev_vector = np.ones(self.k)
+        self.front_messages.append(self.call_unary_potential(1))
+        for i in range(1, self.n):
+            unary_potential = self.call_unary_potential(i)
+            temp_message = np.multiply(prev_vector, unary_potential)
+            binary_potential = self.call_binary_potential(i)
+            prev_vector = np.dot(temp_message.T, binary_potential)
+            self.front_messages.append(prev_vector)
 
-        # add whatever data structures needed
+    def back_pass(self):
+        prev_vector = np.ones(self.k)
+        self.back_messages.append(self.call_unary_potential(self.n))
+        for i in range(self.n, 1, -1):
+            unary_potential = self.call_unary_potential(i)
+            temp_message = np.multiply(prev_vector, unary_potential)
+            binary_potential = self.call_binary_potential(i - 1)
+            prev_vector = np.dot(binary_potential, temp_message.T)
+            self.back_messages.append(prev_vector)
+
+    def call_unary_potential(self, i):
+        potential = np.zeros(self.k)
+        for j in range(1, self.k + 1):
+            potential[j - 1] = self._potentials.potential(i, j)
+        return potential
+
+    def call_binary_potential(self, i):
+        potential = np.zeros((self.k, self.k))
+        for m in range(self.k):
+            for n in range(self.k):
+                potential[m][n] = self._potentials.potential(i + self.n, m + 1, n + 1)
+        return potential
 
     def marginal_probability(self, x_i):
-        # TODO: EDIT HERE
-        # should return a python list of type float, with its length=k+1, and the first value 0
-
-
-
-
-        # This code is used for testing only and should be removed in your implementation.
-        # It creates a uniform distribution, leaving the first position 0
-        result = [1.0 / (self._potentials.num_x_values())] * (self._potentials.num_x_values() + 1)
-        result[0] = 0
+        if x_i == 1 or x_i == self.n:
+            temp = np.multiply(self.front_messages[x_i - 1], self.back_messages[x_i - 1])
+            temp = temp / float(np.sum(temp))
+            result = np.zeros(self.k + 1)
+            result[1 : len(result)] = temp
+        else:
+            temp = np.multiply(self.front_messages[x_i - 1], self.back_messages[x_i - 1])
+            temp = np.multiply(temp, self.call_unary_potential(x_i))
+            temp = temp / float(np.sum(temp))
+            result = np.zeros(self.k + 1)
+            result[1 : len(result)] = temp
         return result
-
 
 class MaxSum:
     def __init__(self, p):
