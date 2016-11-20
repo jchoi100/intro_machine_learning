@@ -185,9 +185,8 @@ class MaxSum:
                 if tab[s][t] > max_probability:
                     max_probability = tab[s][t]
             next_u[t] = max_probability
-        next_i = i - self.n + 1
-        self.front_messages[next_i] = next_u
-        self.front_x_f(next_i, next_u)
+        self.front_messages[i - self.n + 1] = next_u
+        self.front_x_f(i - self.n + 1, next_u)
 
     def back_pass(self, i, u):
         tab = np.zeros((self.k + 1, self.k + 1))
@@ -201,9 +200,8 @@ class MaxSum:
                 if tab[s][t] > max_probability:
                     max_probability = tab[s][t]
             next_u[t] = max_probability
-        next_i = i - self.n
-        self.back_messages[next_i] = next_u
-        self.back_x_f(next_i, next_u)
+        self.back_messages[i - self.n] = next_u
+        self.back_x_f(i - self.n, next_u)
 
     def front_x_f(self, i, u):
         if i >= self.n:
