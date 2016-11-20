@@ -31,7 +31,7 @@ def find_potentials(data_file):
         assignments = ms.get_assignments()
         for j in range(1, len(assignments)):
             print "\tx_" + str(j) + "=" + str(assignments[j])
-
+            
 
 def main():
     if len(sys.argv) == 1:

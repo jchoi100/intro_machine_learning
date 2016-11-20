@@ -1,4 +1,5 @@
 import numpy as np
+from math import log
 
 class ChainMRFPotentials:
     def __init__(self, data_file):
@@ -107,6 +108,7 @@ class SumProduct:
         self.k = p.num_x_values()
         self.front_messages = []
         self.back_messages = []
+        self.norm_constants = np.zeros(self.n + 1)
         self.front_pass()
         self.back_pass()
         self.back_messages = list(reversed(self.back_messages))
@@ -145,29 +147,103 @@ class SumProduct:
         return potential
 
     def marginal_probability(self, x_i):
-        if x_i == 1 or x_i == self.n:
-            temp = np.multiply(self.front_messages[x_i - 1], self.back_messages[x_i - 1])
-            temp = temp / float(np.sum(temp))
-            result = np.zeros(self.k + 1)
-            result[1 : len(result)] = temp
-        else:
-            temp = np.multiply(self.front_messages[x_i - 1], self.back_messages[x_i - 1])
+        temp = np.multiply(self.front_messages[x_i - 1], self.back_messages[x_i - 1])
+        if x_i != 1 and x_i != self.n:
             temp = np.multiply(temp, self.call_unary_potential(x_i))
-            temp = temp / float(np.sum(temp))
-            result = np.zeros(self.k + 1)
-            result[1 : len(result)] = temp
+        self.norm_constants[x_i] = float(np.sum(temp))
+        temp = temp / float(np.sum(temp))
+        result = np.zeros(self.k + 1)
+        result[1 : len(result)] = temp
         return result
 
 class MaxSum:
     def __init__(self, p):
         self._potentials = p
-        self._assignments = [0] * (p.chain_length() + 1)
-        # TODO: EDIT HERE
-        # add whatever data structures needed
+        self._assignments = [None] * (p.chain_length() + 1)
+        self.sp = SumProduct(p)
+        self.n = p.chain_length()
+        self.k = p.num_x_values()
+        for i in range(1, self.n + 1):
+            self.sp.marginal_probability(i)
+        self.norm_constants = self.sp.norm_constants
+        self.unary_potential = self._potentials._potentials1
+        self.binary_potential = self._potentials._potentials2
+        self.front_messages = {1: self.call_unary_potential(1)}
+        self.back_messages = {self.n: self.call_unary_potential(self.n)}
+        self.front_pass(self.n + 1, self.call_unary_potential(1))
+        self.back_pass(2 * self.n - 1, self.call_unary_potential(self.n))
+
+    def front_pass(self, i, u):
+        tab = np.zeros((self.k + 1, self.k + 1))
+        next_u = np.zeros(self.k + 1)
+        for s in range(1, self.k + 1):
+            for t in range(1, self.k + 1):
+                tab[s][t] = log(self.binary_potential[i][s][t]) + u[s]
+        for t in range(self.k + 1):
+            max_probability = -float('inf')
+            for s in range(1, self.k + 1):
+                if tab[s][t] > max_probability:
+                    max_probability = tab[s][t]
+            next_u[t] = max_probability
+        next_i = i - self.n + 1
+        self.front_messages[next_i] = next_u
+        self.front_x_f(next_i, next_u)
+
+    def back_pass(self, i, u):
+        tab = np.zeros((self.k + 1, self.k + 1))
+        next_u = np.zeros(self.k + 1)
+        for t in range(1, self.k + 1):
+            for s in range(1, self.k + 1):
+                tab[t][s] = log(self.binary_potential[i][s][t]) + u[t]
+        for t in range(1, self.k + 1):
+            max_probability = -float('inf')
+            for s in range(1, self.k + 1):
+                if tab[s][t] > max_probability:
+                    max_probability = tab[s][t]
+            next_u[t] = max_probability
+        next_i = i - self.n
+        self.back_messages[next_i] = next_u
+        self.back_x_f(next_i, next_u)
+
+    def front_x_f(self, i, u):
+        if i >= self.n:
+            return
+        next_u = self.vector_sum(self.call_unary_potential(i), u)
+        self.front_pass(i + self.n, next_u)
+
+    def back_x_f(self, i, u):
+        if i <= 1:
+            return
+        next_u = self.vector_sum(self.call_unary_potential(i), u)
+        self.back_pass(i + self.n - 1, next_u)
+
+    def call_unary_potential(self, x_i):
+        potential = np.zeros(self.k + 1)
+        for i in range(1, self.k + 1):
+            potential[i] = log(self.unary_potential[x_i][i])
+        return potential
 
     def get_assignments(self):
         return self._assignments
 
+    def vector_sum(self, a, b, c=None):
+        if c is None:
+            c = np.zeros(self.k + 1)
+        result = np.zeros(self.k + 1)
+        result[0] = -float('inf')
+        for i in range(1, self.k + 1):
+            result[i] = a[i] + b[i] + c[i]
+        return result
+
     def max_probability(self, x_i):
-        # TODO: EDIT HERE
-        return 0.0
+        max_p = np.zeros(self.n + 1)
+        for i in range(1, self.n + 1):
+            if i == 1:
+                agg = self.vector_sum(self.call_unary_potential(i), self.back_messages[i])
+            elif i == self.n:
+                agg = self.vector_sum(self.call_unary_potential(i), self.front_messages[i])
+            else:
+                agg = self.vector_sum(self.call_unary_potential(i), self.front_messages[i], self.back_messages[i])
+            max_p[i] = np.amax(agg)
+            self._assignments[i] = np.where(agg==max_p[i])[0][0]
+        return max_p[x_i] - log(self.norm_constants[x_i])
