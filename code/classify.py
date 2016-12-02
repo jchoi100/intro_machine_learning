@@ -107,6 +107,8 @@ def train(instances, args):
         predictor = LambdaMeans(args.cluster_lambda, args.clustering_training_iterations)
     elif args.algorithm == "nb_clustering":
         predictor = NaiveBayes(args.num_clusters, args.clustering_training_iterations)
+    elif args.algorithm == "mc_perceptron":
+        predictor = MultiplePerceptron(args.online_training_iterations)
     else:
         raise ValueError("Unsupported algorithm type: check your --algorithm argument.")
     predictor.train(instances)

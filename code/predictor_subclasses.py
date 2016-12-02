@@ -703,3 +703,60 @@ class NaiveBayes(Predictor):
         for j in self.all_features:
             new_prototpye[j] = 0.0
         return new_prototpye
+
+""" HW6 """
+class MultiplePerceptron(Predictor):
+
+    def __init__(self, iterations):
+        self.T = iterations
+        self.w = {}
+        self.all_features = []
+        self.all_labels = []
+
+    def note_all_instances(self, instances):
+        for instance in instances:
+            if instance._label.label not in self.all_labels:
+                self.all_labels.append(instance._label.label)
+            for j in instance._feature_vector.feature_vector.keys():
+                if j not in self.all_features:
+                    self.all_features.append(j)
+        self.all_labels.sort()
+        self.all_features.sort()
+
+    def initialize_w(self):
+        for k in range(1, max(self.all_labels) + 1):
+            self.w[k] = {}
+            for j in self.all_features:
+                self.w[k][j] = 0.0
+
+    def train(self, instances):
+        self.note_all_instances(instances)
+        self.initialize_w()
+        for t in range(self.T):
+            for instance in instances:
+                x_i = instance._feature_vector.feature_vector
+                y_i = instance._label.label
+                y_hat = self.predict(instance).label
+                if y_i != y_hat:
+                    self.update_weight(y_i, y_hat, x_i)
+
+    def update_weight(self, y_i, y_hat, x_i):
+        for j in x_i.keys():
+            self.w[y_i][j] += x_i[j]
+            self.w[y_hat][j] -= x_i[j]
+
+    def predict(self, instance):
+        max_k, max_val = -1, -float('inf')
+        for k in range(1, max(self.all_labels) + 1):
+            val = self.compute_dot_product(instance._feature_vector.feature_vector, k)
+            if val > max_val:
+                max_k, max_val = k, val
+            elif val == max_val and k < max_k:
+                max_k = k
+        return ClassificationLabel(max_k)
+
+    def compute_dot_product(self, x_i, k):
+        dot_product = 0.0
+        for key, val in x_i.items():
+            dot_product += self.w[k][key] * val
+        return dot_product
