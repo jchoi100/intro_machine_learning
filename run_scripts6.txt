@@ -2,3 +2,4 @@ python code/classify.py --mode train --algorithm mc_perceptron --model-file spee
 python code/classify.py --mode test --algorithm mc_perceptron --model-file speech.mc.mc_perceptron.model --data speech.mc.dev --predictions-file speech.mc.dev.predictions
 python compute_accuracy.py speech.mc.dev speech.mc.dev.predictions
 
+
